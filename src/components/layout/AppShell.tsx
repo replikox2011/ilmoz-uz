@@ -6,6 +6,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { PageTransition } from "../motion/Motion";
 import { FloatingCopilot } from "../copilot/FloatingCopilot";
+import { BottomNav } from "./BottomNav";
 import { isPlatformAdmin } from "../../lib/access";
 
 // Framer Motion v11 returns Element|undefined; TypeScript 4 JSX wants Element|null.
@@ -31,7 +32,7 @@ export function AppShell() {
       <Sidebar role={user.role} centerName={center.name} isadm={isPlatformAdmin(user)} ismod={user.ismod} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 pb-24 lg:pb-6">
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait" initial={false}>
               <PageTransition key={location.pathname}>
@@ -42,6 +43,7 @@ export function AppShell() {
         </main>
       </div>
       {location.pathname !== "/ai" && <FloatingCopilot />}
+      <BottomNav role={user.role} />
     </div>
   );
 }
