@@ -1,9 +1,11 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { Logo } from "../../components/ui/Logo";
-import { Sparkles, ShieldCheck, Zap, Building2 } from "lucide-react";
+import { Sparkles, ShieldCheck, Zap, Building2, Languages } from "lucide-react";
 import { Center } from "../../types";
 import { LoginBrandPanel } from "../../components/auth/LoginBrandPanel";
+import { useI18n } from "../../i18n/I18nContext";
+import { cn } from "../../lib/utils";
 
 const highlights = [
   { icon: Sparkles, title: "Intelligent by design", desc: "AI woven through every workflow." },
@@ -18,8 +20,30 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, centerBrand }: AuthLayoutProps) {
+  const { language, languages, setLanguage } = useI18n();
+
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="relative grid min-h-screen lg:grid-cols-2">
+      {/* Language Switcher */}
+      <div className="absolute right-4 top-4 z-50 flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+        <Languages className="ml-1.5 mr-0.5 h-3.5 w-3.5 text-white/35" />
+        {languages.map((item) => (
+          <button
+            key={item.code}
+            type="button"
+            onClick={() => setLanguage(item.code)}
+            className={cn(
+              "rounded-xl px-2 py-1 text-[10px] font-bold transition",
+              language === item.code
+                ? "bg-white/10 text-white"
+                : "text-white/45 hover:bg-white/[0.05] hover:text-white/80"
+            )}
+            aria-label={item.label}
+          >
+            {item.short}
+          </button>
+        ))}
+      </div>
       {centerBrand ? (
         // ── Center-specific branding (subdomain login page) — template-driven ──
         <div className="relative hidden overflow-hidden lg:block">

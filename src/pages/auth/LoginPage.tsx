@@ -89,20 +89,20 @@ export function LoginPage() {
 
       {/* ── Login (email / username / phone) + Password ── */}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <Field label={t("auth.login.loginLabel")}>
+        <Field label={t("auth.login.fieldEmail")}>
           <div className="relative">
             <AtSign className="absolute left-3 top-2.5 h-4 w-4 text-white/30" />
             <Input
               type="text"
               required
-              placeholder={t("auth.login.loginPlaceholder")}
+              placeholder="you@center.com"
               className="pl-10"
               value={login}
               onChange={e => setLogin(e.target.value)}
             />
           </div>
         </Field>
-        <Field label={t("auth.login.passwordLabel")}>
+        <Field label={t("auth.login.fieldPassword")}>
           <div className="relative">
             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-white/30" />
             <Input
@@ -118,7 +118,7 @@ export function LoginPage() {
               onClick={() => setShowPwd(!showPwd)}
               className="absolute right-3 top-2.5 text-xs text-white/30 transition hover:text-white/60"
             >
-              {showPwd ? t("auth.login.hide") : t("auth.login.show")}
+              {showPwd ? t("auth.login.hidePassword") : t("auth.login.showPassword")}
             </button>
           </div>
         </Field>
