@@ -127,8 +127,14 @@ function GoToCenterPage() {
 }
 
 function LandingRoute() {
-  const { fbUser, loading } = useAuth();
+  const { fbUser, loading, activeSubdomain } = useAuth();
   if (loading) return <BootScreen />;
+
+  // If on a subdomain, there is no landing page. Redirect to dashboard or login.
+  if (activeSubdomain) {
+    return <Navigate to={fbUser ? "/" : "/login"} replace />;
+  }
+
   // Authenticated users skip the marketing page and go straight to the app.
   if (fbUser) return <Navigate to="/" replace />;
   return <LandingPage />;

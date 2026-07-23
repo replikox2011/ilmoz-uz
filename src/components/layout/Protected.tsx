@@ -5,12 +5,17 @@ import { Logo } from "../ui/Logo";
 import { useI18n } from "../../i18n/I18nContext";
 
 export function Protected({ children }: { children: React.ReactNode }) {
-  const { fbUser, user, loading, needsCenterSetup } = useAuth();
+  const { fbUser, user, loading, needsCenterSetup, activeSubdomain } = useAuth();
 
   if (loading) return <BootScreen />;
 
-  // Not signed in at all → landing page
-  if (!fbUser) return <Navigate to="/landing" replace />;
+  // Not signed in at all → landing page (on main domain) or login page (on subdomain)
+  if (!fbUser) {
+    if (activeSubdomain) {
+      return <Navigate to="/login" replace />;
+    }
+    return <Navigate to="/landing" replace />;
+  }
 
   // Signed in via Google/Phone but hasn't created a center yet → onboarding
   if (needsCenterSetup) return <Navigate to="/setup" replace />;
