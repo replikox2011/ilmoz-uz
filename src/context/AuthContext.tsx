@@ -4,7 +4,6 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -45,7 +44,6 @@ interface AuthContextValue {
   subdomainCenterId: string | null;
 
   signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   /** Login with email OR username OR phone + password */
   signInWithLogin: (login: string, password: string) => Promise<void>;
@@ -188,14 +186,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
   };
-
-  const signInWithApple = async () => {
-    const provider = new OAuthProvider("apple.com");
-    provider.addScope("email");
-    provider.addScope("name");
-    await signInWithPopup(auth, provider);
-  };
-
   const signInWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
@@ -327,7 +317,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     activeSubdomain,
     subdomainCenterId,
     signInWithGoogle,
-    signInWithApple,
     signInWithEmail,
     signInWithLogin,
     registerWithEmail,

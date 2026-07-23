@@ -37,7 +37,7 @@ const TRANSITION = { type: "spring" as const, stiffness: 380, damping: 30 };
 
 // =============================================================================
 export function RegisterPage() {
-  const { registerWithEmail, signInWithGoogle, signInWithApple, activeSubdomain } = useAuth();
+  const { registerWithEmail, signInWithGoogle, activeSubdomain } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
 
@@ -74,7 +74,6 @@ export function RegisterPage() {
   const [showPwd, setShowPwd]     = React.useState(false);
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = React.useState(false);
-  const [appleLoading, setAppleLoading]   = React.useState(false);
 
   const [subdomain, setSubdomain]         = React.useState("");
   const [subdomainEdited, setSubdomainEdited] = React.useState(false);
@@ -147,22 +146,6 @@ export function RegisterPage() {
     }
   };
 
-  // ── Apple ─────────────────────────────────────────────────────────────────
-  const handleApple = async () => {
-    setAppleLoading(true);
-    setServerError(null);
-    try {
-      await signInWithApple();
-      navigate("/");
-    } catch (err: any) {
-      if (err?.code !== "auth/popup-closed-by-user" && err?.code !== "auth/cancelled-popup-request") {
-        setServerError(err?.message ?? t("auth.register.errorApple"));
-      }
-    } finally {
-      setAppleLoading(false);
-    }
-  };
-
   // ── Progress indicator (shown on steps 2-3 of the email flow) ─────────────
   const emailStepIndex = step === "center" ? 1 : step === "account" ? 2 : null;
 
@@ -219,14 +202,6 @@ export function RegisterPage() {
                     desc="Быстрый вход через Google аккаунт"
                     loading={googleLoading}
                     onClick={handleGoogle}
-                  />
-                  {/* Apple */}
-                  <MethodCard
-                    icon={<AppleGlyph />}
-                    label={t("auth.register.methodApple")}
-                    desc="Войти через Apple ID"
-                    loading={appleLoading}
-                    onClick={handleApple}
                   />
                   {/* Email */}
                   <MethodCard
@@ -499,11 +474,3 @@ function GoogleGlyph() {
   );
 }
 
-// ── Apple glyph ───────────────────────────────────────────────────────────────
-function AppleGlyph() {
-  return (
-    <svg className="h-5 w-5 fill-white" viewBox="0 0 24 24">
-      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.29.07 2.18.74 2.93.8 1.11-.21 2.17-.9 3.36-.77 1.43.17 2.51.74 3.21 1.87-2.87 1.74-2.19 5.57.49 6.65-.57 1.5-1.31 3-1.99 4.31zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-    </svg>
-  );
-}
