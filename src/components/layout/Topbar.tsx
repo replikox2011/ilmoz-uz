@@ -4,7 +4,7 @@ import {
   Search, Bell, Command, LogOut, Users,
   GraduationCap, Settings, Sparkles,
   ArrowRight, LayoutDashboard, CalendarDays,
-  Wallet, BarChart3, Languages, type LucideIcon
+  Wallet, BarChart3, Languages, Sun, Moon, type LucideIcon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
@@ -12,6 +12,7 @@ import { Avatar } from "../ui/Avatar";
 import { Badge } from "../ui/Badge";
 import { cn } from "../../lib/utils";
 import { useI18n } from "../../i18n/I18nContext";
+import { useTheme } from "../../context/ThemeContext";
 
 interface SearchResult {
   id: string;
@@ -26,6 +27,7 @@ interface SearchResult {
 export function Topbar() {
   const { user, center, logout } = useAuth();
   const { language, languages, setLanguage, t } = useI18n();
+  const { theme, toggleTheme } = useTheme();
   const data = useCenterData();
   const navigate = useNavigate();
 
@@ -267,10 +269,23 @@ export function Topbar() {
             <Settings className="h-[18px] w-[18px]" />
           </button>
 
-          <div className="mx-1 hidden h-8 w-px bg-white/10 sm:block" />
+          <div className="mx-1 hidden h-8 w-px bg-[var(--color-border)] sm:block" />
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+            className="grid h-10 w-10 place-items-center rounded-2xl text-[var(--color-text-muted)] transition hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-[18px] w-[18px]" />
+            ) : (
+              <Moon className="h-[18px] w-[18px]" />
+            )}
+          </button>
 
           <div
-            className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.03] p-1 xl:flex"
+            className="hidden items-center gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 xl:flex"
             title={t("language.label")}
           >
             <Languages className="ml-2 h-3.5 w-3.5 text-white/35" />

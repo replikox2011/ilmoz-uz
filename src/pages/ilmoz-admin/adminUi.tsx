@@ -28,15 +28,15 @@ export function StatCard({
   color?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-white/50">{label}</p>
+        <p className="text-sm text-[var(--color-text-muted)]">{label}</p>
         <div className={cn("grid h-9 w-9 place-items-center rounded-xl", color)}>
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <p className="text-3xl font-bold text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs text-white/35">{sub}</p>}
+      <p className="text-3xl font-bold text-[var(--color-text)]">{value}</p>
+      {sub && <p className="mt-1 text-xs text-[var(--color-text-faint)]">{sub}</p>}
     </div>
   );
 }
@@ -50,7 +50,7 @@ const PILL_TONES: Record<string, string> = {
   brand: "bg-brand-500/15 text-brand-300",
   rose: "bg-rose-500/15 text-rose-300",
   red: "bg-red-500/15 text-red-300",
-  neutral: "bg-white/[0.06] text-white/50",
+  neutral: "bg-[var(--color-surface-active)] text-[var(--color-text-muted)]",
 };
 export type PillTone = keyof typeof PILL_TONES;
 
@@ -92,12 +92,12 @@ export function SearchInput({
   const resolvedPlaceholder = placeholder === "Search…" ? t("admin.searchPlaceholder") : placeholder;
   return (
     <div className={cn("relative", className)}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-faint)]" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={resolvedPlaceholder}
-        className="w-64 rounded-xl border border-white/[0.08] bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/25 focus:border-amber-400/40 focus:outline-none"
+        className="w-64 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-9 pr-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:border-amber-400/40 focus:outline-none"
       />
     </div>
   );
@@ -116,7 +116,7 @@ export function RefreshButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2 text-xs text-white/50 transition hover:text-white/80 disabled:opacity-40"
+      className="flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] disabled:opacity-40"
     >
       <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
       {t("admin.refresh")}
@@ -150,7 +150,7 @@ export function FilterTabs<T extends string>({
               "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium transition",
               active === f.key
                 ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/25"
-                : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
+                : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
             )}
           >
             {resolvedLabel}
@@ -160,7 +160,7 @@ export function FilterTabs<T extends string>({
                   "rounded-full px-1.5 py-0.5 text-[10px]",
                   active === f.key
                     ? "bg-amber-500/20 text-amber-300"
-                    : "bg-white/[0.06] text-white/40"
+                    : "bg-[var(--color-surface-active)] text-[var(--color-text-muted)]"
                 )}
               >
                 {counts[f.key] ?? 0}
@@ -198,8 +198,8 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-2 py-16 text-center">
-      <Icon className="h-8 w-8 text-white/15" />
-      <p className="text-sm text-white/35">{message}</p>
+      <Icon className="h-8 w-8 text-[var(--color-text-faint)]" />
+      <p className="text-sm text-[var(--color-text-muted)]">{message}</p>
     </div>
   );
 }
@@ -213,10 +213,10 @@ export function Table({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.06]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--color-border)]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-white/[0.06] bg-white/[0.02]">{head}</tr>
+          <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">{head}</tr>
         </thead>
         <tbody>{children}</tbody>
       </table>
@@ -240,7 +240,7 @@ export function Th({
     return children;
   };
   return (
-    <th className={cn("px-5 py-3 text-left text-xs font-medium text-white/40", className)}>
+    <th className={cn("px-5 py-3 text-left text-xs font-medium text-[var(--color-text-muted)]", className)}>
       {getHeaderLabel()}
     </th>
   );

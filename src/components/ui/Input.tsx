@@ -11,16 +11,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="relative">
         {icon && (
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-faint)]">
             {icon}
           </span>
         )}
         <input
           ref={ref}
           className={cn(
-            "h-12 w-full rounded-2xl bg-white/[0.04] border border-white/10 px-4 text-sm text-white placeholder:text-white/35",
+            "h-12 w-full rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] px-4 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-faint)]",
             "transition-all duration-300 outline-none",
-            "focus:border-brand-400/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-brand-500/15",
+            "focus:border-brand-400/60 focus:bg-[var(--color-surface-hover)] focus:ring-4 focus:ring-brand-500/15",
             icon && "pl-11",
             className
           )}
@@ -44,7 +44,7 @@ export function Field({ label, error, hint, children, className }: FieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && (
-        <label className="block text-xs font-medium text-white/60">
+        <label className="block text-xs font-medium text-[var(--color-text-muted)]">
           {label}
         </label>
       )}
@@ -52,7 +52,7 @@ export function Field({ label, error, hint, children, className }: FieldProps) {
       {error ? (
         <p className="text-xs text-red-400">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-white/40">{hint}</p>
+        <p className="text-xs text-[var(--color-text-faint)]">{hint}</p>
       ) : null}
     </div>
   );

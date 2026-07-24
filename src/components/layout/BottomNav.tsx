@@ -47,10 +47,10 @@ export function BottomNav({ role }: BottomNavProps) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: "100%", opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className="fixed bottom-[72px] left-0 right-0 z-50 mx-3 mb-1 overflow-hidden rounded-3xl border border-white/[0.08] bg-bg/90 shadow-glass-lg backdrop-blur-3xl lg:hidden"
+          className="fixed bottom-[72px] left-0 right-0 z-50 mx-3 mb-1 overflow-hidden rounded-3xl border border-[var(--color-border)] glass shadow-glass-lg backdrop-blur-3xl lg:hidden"
         >
           <div className="p-3">
-            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-white/30">
+            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-faint)]">
               {t("sidebar.workspace")}
             </p>
             <ul className="space-y-0.5">
@@ -64,8 +64,8 @@ export function BottomNav({ role }: BottomNavProps) {
                       cn(
                         "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all",
                         isActive
-                          ? "text-white"
-                          : "text-white/55 hover:text-white"
+                          ? "text-[var(--color-text)]"
+                          : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                       )
                     }
                   >
@@ -74,14 +74,14 @@ export function BottomNav({ role }: BottomNavProps) {
                         {isActive && (
                           <motion.span
                             layoutId="more-active"
-                            className="absolute inset-0 -z-10 rounded-xl bg-white/[0.08] ring-1 ring-white/10"
+                            className="absolute inset-0 -z-10 rounded-xl bg-[var(--color-surface-active)] ring-1 ring-[var(--color-border)]"
                             transition={{ type: "spring", stiffness: 400, damping: 32 }}
                           />
                         )}
                         <item.icon
                           className={cn(
                             "h-5 w-5 shrink-0",
-                            isActive ? "text-brand-300" : "text-white/45"
+                            isActive ? "text-brand-400" : "text-[var(--color-text-muted)]"
                           )}
                         />
                         <span>{t(item.labelKey)}</span>
@@ -93,12 +93,12 @@ export function BottomNav({ role }: BottomNavProps) {
             </ul>
 
             {/* Logout button inside drawer */}
-            <div className="mt-2 border-t border-white/[0.06] pt-2">
+            <div className="mt-2 border-t border-[var(--color-border)] pt-2">
               <button
                 onClick={() => { setShowMore(false); logoutToMain(); }}
-                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/40 transition-all hover:text-white/70"
+                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--color-text-muted)] transition-all hover:text-[var(--color-text)]"
               >
-                <LogOut className="h-5 w-5 shrink-0 text-white/30 group-hover:text-white/60" />
+                <LogOut className="h-5 w-5 shrink-0 text-[var(--color-text-faint)] group-hover:text-[var(--color-text-muted)]" />
                 <span>{t("sidebar.backToMain")}</span>
               </button>
             </div>
@@ -109,7 +109,7 @@ export function BottomNav({ role }: BottomNavProps) {
       {/* Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
         {/* Safe area glass pill */}
-        <div className="mx-0 border-t border-white/[0.06] bg-bg/80 px-2 pb-safe-bottom backdrop-blur-3xl shadow-[0_-1px_0_rgba(255,255,255,0.05)]">
+        <div className="mx-0 border-t border-[var(--color-border)] bg-[var(--color-bg)]/90 px-2 pb-safe-bottom backdrop-blur-3xl">
           <ul className="flex items-center justify-around py-1">
             {primary.map((item) => (
               <li key={item.to} className="flex-1">
@@ -138,14 +138,14 @@ export function BottomNav({ role }: BottomNavProps) {
                         <item.icon
                           className={cn(
                             "h-[20px] w-[20px] transition-colors duration-200",
-                            isActive ? "text-brand-300" : "text-white/45 group-hover:text-white/70"
+                            isActive ? "text-brand-400" : "text-[var(--color-text-faint)] group-hover:text-[var(--color-text-muted)]"
                           )}
                         />
                       </span>
                       <span
                         className={cn(
                           "text-[10px] font-medium tracking-wide transition-colors duration-200",
-                          isActive ? "text-brand-300" : "text-white/35"
+                          isActive ? "text-brand-400" : "text-[var(--color-text-faint)]"
                         )}
                       >
                         {t(item.labelKey)}
@@ -166,19 +166,19 @@ export function BottomNav({ role }: BottomNavProps) {
                   <span
                     className={cn(
                       "grid h-9 w-9 place-items-center rounded-2xl transition-all duration-200",
-                      showMore ? "bg-white/[0.08] scale-105" : "group-active:scale-90"
+                      showMore ? "bg-[var(--color-surface-active)] scale-105" : "group-active:scale-90"
                     )}
                   >
                     <MoreHorizontal
                       className={cn(
                         "h-[20px] w-[20px] transition-colors duration-200",
-                        showMore ? "text-white/80" : "text-white/45"
+                        showMore ? "text-[var(--color-text)]" : "text-[var(--color-text-faint)]"
                       )}
                     />
                   </span>
                   <span className={cn(
                     "text-[10px] font-medium tracking-wide transition-colors duration-200",
-                    showMore ? "text-white/70" : "text-white/35"
+                    showMore ? "text-[var(--color-text-muted)]" : "text-[var(--color-text-faint)]"
                   )}>
                     More
                   </span>

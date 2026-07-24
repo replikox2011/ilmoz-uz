@@ -29,11 +29,11 @@ export function Sidebar({ role, centerName, isadm, ismod }: SidebarProps) {
         {/* Logo + center */}
         <div className="px-4 pt-4 pb-3">
           <Logo />
-          <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/[0.04] px-3 py-1.5">
+          <div className="mt-3 flex items-center gap-2 rounded-xl bg-[var(--color-surface)] px-3 py-1.5">
             <div className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px] shadow-emerald-400/70" />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">{centerName}</p>
-              <p className="text-[11px] text-white/40">
+              <p className="truncate text-sm font-medium text-[var(--color-text)]">{centerName}</p>
+              <p className="text-[11px] text-[var(--color-text-muted)]">
                 {t(`role.${role}`)} {t("sidebar.workspaceSuffix")}
               </p>
             </div>
@@ -41,11 +41,11 @@ export function Sidebar({ role, centerName, isadm, ismod }: SidebarProps) {
         </div>
 
         {/* Divider */}
-        <div className="mx-4 h-px bg-white/[0.06]" />
+        <div className="mx-4 h-px bg-[var(--color-border)]" />
 
         {/* Nav */}
         <nav className="flex flex-1 flex-col overflow-y-auto px-2.5 py-3">
-          <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/30">
+          <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-faint)]">
             {t("sidebar.workspace")}
           </p>
           <ul className="space-y-0.5">
@@ -58,8 +58,8 @@ export function Sidebar({ role, centerName, isadm, ismod }: SidebarProps) {
                     cn(
                       "group relative flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-all duration-300",
                       isActive
-                        ? "text-white"
-                        : "text-white/55 hover:text-white hover:bg-white/[0.04]"
+                        ? "text-[var(--color-text)]"
+                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface)]"
                     )
                   }
                 >
@@ -68,14 +68,14 @@ export function Sidebar({ role, centerName, isadm, ismod }: SidebarProps) {
                       {isActive && (
                         <motion.span
                           layoutId="nav-active"
-                          className="absolute inset-0 -z-10 rounded-xl bg-white/[0.08] ring-1 ring-white/10"
+                          className="absolute inset-0 -z-10 rounded-xl bg-[var(--color-surface-active)] ring-1 ring-[var(--color-border-hover)]"
                           transition={{ type: "spring", stiffness: 400, damping: 32 }}
                         />
                       )}
                       <item.icon
                         className={cn(
                           "h-[17px] w-[17px] shrink-0 transition-colors",
-                          isActive ? "text-brand-300" : "text-white/45 group-hover:text-white/80"
+                          isActive ? "text-brand-400" : "text-[var(--color-text-faint)] group-hover:text-[var(--color-text-muted)]"
                         )}
                       />
                       <span className="flex-1 truncate">{t(item.labelKey)}</span>
@@ -130,13 +130,13 @@ export function Sidebar({ role, centerName, isadm, ismod }: SidebarProps) {
             </>
           )}
 
-          {/* Back to main site — прижат к низу */}
-          <div className="mt-auto pt-3 border-t border-white/[0.06]">
+          {/* Back to main site */}
+          <div className="mt-auto pt-3 border-t border-[var(--color-border)]">
             <button
               onClick={logoutToMain}
-              className="group flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm text-white/40 transition-all hover:bg-white/[0.04] hover:text-white/70"
+              className="group flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
             >
-              <LogOut className="h-[17px] w-[17px] shrink-0 text-white/30 group-hover:text-white/60" />
+              <LogOut className="h-[17px] w-[17px] shrink-0 text-[var(--color-text-faint)] group-hover:text-[var(--color-text-muted)]" />
               <span className="flex-1 truncate">{t("sidebar.backToMain")}</span>
             </button>
           </div>

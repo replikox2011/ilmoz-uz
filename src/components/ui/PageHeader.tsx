@@ -12,10 +12,10 @@ export function PageHeader({ title, subtitle, actions, className }: PageHeaderPr
   return (
     <div className={cn("mb-6 flex flex-wrap items-end justify-between gap-4", className)}>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gradient sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text)] sm:text-3xl">
           {title}
         </h1>
-        {subtitle && <p className="mt-1 text-sm text-white/45">{subtitle}</p>}
+        {subtitle && <p className="mt-1 text-sm text-[var(--color-text-muted)]">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>

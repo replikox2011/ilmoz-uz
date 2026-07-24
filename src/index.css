@@ -4,11 +4,98 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    color-scheme: dark;
-  }
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — CSS Custom Properties
+   Dark theme = default (:root), Light theme = [data-theme="light"]
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  color-scheme: dark;
 
+  /* Backgrounds */
+  --color-bg:           #05060a;
+  --color-bg-soft:      #0a0c14;
+  --color-bg-elevated:  #0f1220;
+
+  /* Surfaces (cards, inputs, etc.) */
+  --color-surface:          rgba(255, 255, 255, 0.04);
+  --color-surface-hover:    rgba(255, 255, 255, 0.07);
+  --color-surface-active:   rgba(255, 255, 255, 0.10);
+
+  /* Borders */
+  --color-border:       rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.16);
+  --color-border-focus: rgba(59, 107, 255, 0.5);
+
+  /* Text */
+  --color-text:         rgba(255, 255, 255, 0.90);
+  --color-text-muted:   rgba(255, 255, 255, 0.50);
+  --color-text-faint:   rgba(255, 255, 255, 0.30);
+
+  /* Glass (glassmorphism surfaces) */
+  --glass-bg-from:      rgba(255, 255, 255, 0.06);
+  --glass-bg-to:        rgba(255, 255, 255, 0.025);
+  --glass-bg-strong-from: rgba(255, 255, 255, 0.10);
+  --glass-bg-strong-to:   rgba(255, 255, 255, 0.04);
+  --glass-border:       rgba(255, 255, 255, 0.08);
+  --glass-highlight:    rgba(255, 255, 255, 0.40);
+  --glass-blur:         28px;
+
+  /* Scrollbar */
+  --scrollbar-thumb:       rgba(255, 255, 255, 0.10);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.20);
+
+  /* Aurora / ambient */
+  --aurora-1: rgba(36, 80, 245, 0.18);
+  --aurora-2: rgba(59, 107, 255, 0.14);
+  --aurora-3: rgba(30, 50, 139, 0.16);
+  --grid-line: rgba(255, 255, 255, 0.02);
+
+  /* Shadow */
+  --shadow-glass:    0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glass-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Light Theme Overrides ─────────────────────────────────────────────── */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg:           #f0f2f8;
+  --color-bg-soft:      #e8eaf2;
+  --color-bg-elevated:  #ffffff;
+
+  --color-surface:          rgba(255, 255, 255, 0.80);
+  --color-surface-hover:    rgba(255, 255, 255, 0.95);
+  --color-surface-active:   rgba(255, 255, 255, 1.00);
+
+  --color-border:       rgba(0, 0, 0, 0.08);
+  --color-border-hover: rgba(0, 0, 0, 0.16);
+  --color-border-focus: rgba(59, 107, 255, 0.5);
+
+  --color-text:         rgba(10, 12, 28, 0.90);
+  --color-text-muted:   rgba(10, 12, 28, 0.50);
+  --color-text-faint:   rgba(10, 12, 28, 0.30);
+
+  --glass-bg-from:      rgba(255, 255, 255, 0.80);
+  --glass-bg-to:        rgba(255, 255, 255, 0.60);
+  --glass-bg-strong-from: rgba(255, 255, 255, 0.92);
+  --glass-bg-strong-to:   rgba(255, 255, 255, 0.75);
+  --glass-border:       rgba(0, 0, 0, 0.07);
+  --glass-highlight:    rgba(255, 255, 255, 0.90);
+  --glass-blur:         24px;
+
+  --scrollbar-thumb:       rgba(0, 0, 0, 0.12);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.22);
+
+  --aurora-1: rgba(36, 80, 245, 0.07);
+  --aurora-2: rgba(59, 107, 255, 0.05);
+  --aurora-3: rgba(30, 50, 139, 0.06);
+  --grid-line: rgba(0, 0, 0, 0.03);
+
+  --shadow-glass:    0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-glass-lg: 0 24px 64px rgba(0, 0, 0, 0.15);
+}
+
+@layer base {
   * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -21,22 +108,25 @@
   }
 
   body {
-    @apply bg-bg text-white/90 font-sans antialiased;
-    background-color: #05060a;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: "Inter Tight", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Ambient aurora — the "operating system" atmosphere */
+  /* Ambient aurora — adapts to theme via CSS vars */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -2;
     background:
-      radial-gradient(60rem 60rem at 15% -10%, rgba(36, 80, 245, 0.18), transparent 60%),
-      radial-gradient(50rem 50rem at 110% 10%, rgba(59, 107, 255, 0.14), transparent 55%),
-      radial-gradient(70rem 70rem at 50% 120%, rgba(30, 50, 139, 0.16), transparent 60%);
+      radial-gradient(60rem 60rem at 15% -10%, var(--aurora-1), transparent 60%),
+      radial-gradient(50rem 50rem at 110% 10%, var(--aurora-2), transparent 55%),
+      radial-gradient(70rem 70rem at 50% 120%, var(--aurora-3), transparent 60%);
     pointer-events: none;
+    transition: background 0.3s ease;
   }
 
   /* Subtle grid texture */
@@ -46,8 +136,8 @@
     inset: 0;
     z-index: -2;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 40%, transparent 100%);
     pointer-events: none;
@@ -92,27 +182,29 @@
     filter: blur(0.35px) saturate(1.12);
   }
 
-  /* Frosted glass surface */
+  /* Frosted glass surface — theme-aware via CSS vars */
   .glass {
     background: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.06) 0%,
-      rgba(255, 255, 255, 0.025) 100%
+      var(--glass-bg-from) 0%,
+      var(--glass-bg-to) 100%
     );
-    backdrop-filter: blur(28px) saturate(140%);
-    -webkit-backdrop-filter: blur(28px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    border: 1px solid var(--glass-border);
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
 
   .glass-strong {
     background: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.04) 100%
+      var(--glass-bg-strong-from) 0%,
+      var(--glass-bg-strong-to) 100%
     );
     backdrop-filter: blur(40px) saturate(160%);
     -webkit-backdrop-filter: blur(40px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
 
   /* Hairline top highlight used on premium cards */
@@ -127,7 +219,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.4),
+      var(--glass-highlight),
       transparent
     );
     opacity: 0.5;
@@ -727,7 +819,7 @@
   .premium-3d:hover > * { transform: none !important; }
 }
 
-/* Custom scrollbars — thin, glassy */
+/* Custom scrollbars — thin, theme-aware */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -736,13 +828,13 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb-hover);
   background-clip: content-box;
 }
 
@@ -751,3 +843,117 @@
   background: rgba(59, 107, 255, 0.35);
   color: #fff;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — Global Tailwind Class Overrides
+   These override hardcoded text-white/* and bg-white/* classes throughout
+   all page components without requiring a full rewrite of every file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Text colors ─────────────────────────────────────────────────────── */
+[data-theme="light"] .text-white               { color: rgba(10, 12, 28, 0.92) !important; }
+[data-theme="light"] .text-white\/90           { color: rgba(10, 12, 28, 0.90) !important; }
+[data-theme="light"] .text-white\/80           { color: rgba(10, 12, 28, 0.80) !important; }
+[data-theme="light"] .text-white\/70           { color: rgba(10, 12, 28, 0.70) !important; }
+[data-theme="light"] .text-white\/60           { color: rgba(10, 12, 28, 0.60) !important; }
+[data-theme="light"] .text-white\/55           { color: rgba(10, 12, 28, 0.55) !important; }
+[data-theme="light"] .text-white\/50           { color: rgba(10, 12, 28, 0.50) !important; }
+[data-theme="light"] .text-white\/45           { color: rgba(10, 12, 28, 0.45) !important; }
+[data-theme="light"] .text-white\/40           { color: rgba(10, 12, 28, 0.40) !important; }
+[data-theme="light"] .text-white\/35           { color: rgba(10, 12, 28, 0.35) !important; }
+[data-theme="light"] .text-white\/30           { color: rgba(10, 12, 28, 0.30) !important; }
+[data-theme="light"] .text-white\/25           { color: rgba(10, 12, 28, 0.25) !important; }
+[data-theme="light"] .text-white\/20           { color: rgba(10, 12, 28, 0.20) !important; }
+[data-theme="light"] .text-white\/15           { color: rgba(10, 12, 28, 0.15) !important; }
+[data-theme="light"] .text-white\/10           { color: rgba(10, 12, 28, 0.10) !important; }
+
+/* ── Placeholder text ────────────────────────────────────────────────── */
+[data-theme="light"] .placeholder\:text-white\/35::placeholder { color: rgba(10, 12, 28, 0.35) !important; }
+[data-theme="light"] .placeholder\:text-white\/30::placeholder { color: rgba(10, 12, 28, 0.30) !important; }
+[data-theme="light"] .placeholder\:text-white\/25::placeholder { color: rgba(10, 12, 28, 0.25) !important; }
+
+/* ── Surface backgrounds ─────────────────────────────────────────────── */
+[data-theme="light"] .bg-bg                        { background-color: #f0f2f8 !important; }
+[data-theme="light"] .bg-bg\/80                    { background-color: rgba(240, 242, 248, 0.90) !important; }
+[data-theme="light"] .bg-bg\/90                    { background-color: rgba(240, 242, 248, 0.95) !important; }
+[data-theme="light"] .bg-white\/\[0\.02\]          { background-color: rgba(255, 255, 255, 0.70) !important; }
+[data-theme="light"] .bg-white\/\[0\.03\]          { background-color: rgba(255, 255, 255, 0.80) !important; }
+[data-theme="light"] .bg-white\/\[0\.04\]          { background-color: rgba(255, 255, 255, 0.85) !important; }
+[data-theme="light"] .bg-white\/\[0\.05\]          { background-color: rgba(255, 255, 255, 0.90) !important; }
+[data-theme="light"] .bg-white\/\[0\.06\]          { background-color: rgba(0, 0, 0, 0.04) !important; }
+[data-theme="light"] .bg-white\/\[0\.07\]          { background-color: rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .bg-white\/\[0\.08\]          { background-color: rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .bg-white\/10                 { background-color: rgba(0, 0, 0, 0.06) !important; }
+
+/* ── Borders ─────────────────────────────────────────────────────────── */
+[data-theme="light"] .border-white\/10             { border-color: rgba(0, 0, 0, 0.10) !important; }
+[data-theme="light"] .border-white\/\[0\.06\]      { border-color: rgba(0, 0, 0, 0.06) !important; }
+[data-theme="light"] .border-white\/\[0\.08\]      { border-color: rgba(0, 0, 0, 0.08) !important; }
+[data-theme="light"] .border-white\/\[0\.05\]      { border-color: rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .border-white\/20             { border-color: rgba(0, 0, 0, 0.15) !important; }
+
+/* ── Hover backgrounds ───────────────────────────────────────────────── */
+[data-theme="light"] .hover\:bg-white\/\[0\.04\]:hover  { background-color: rgba(0, 0, 0, 0.04) !important; }
+[data-theme="light"] .hover\:bg-white\/\[0\.06\]:hover  { background-color: rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .hover\:bg-white\/\[0\.03\]:hover  { background-color: rgba(0, 0, 0, 0.03) !important; }
+[data-theme="light"] .hover\:bg-white\/10:hover         { background-color: rgba(0, 0, 0, 0.06) !important; }
+
+/* ── Hover text ──────────────────────────────────────────────────────── */
+[data-theme="light"] .hover\:text-white:hover       { color: rgba(10, 12, 28, 0.92) !important; }
+[data-theme="light"] .hover\:text-white\/80:hover   { color: rgba(10, 12, 28, 0.80) !important; }
+[data-theme="light"] .hover\:text-white\/70:hover   { color: rgba(10, 12, 28, 0.70) !important; }
+
+/* ── Ring colors ─────────────────────────────────────────────────────── */
+[data-theme="light"] .ring-white\/10               { --tw-ring-color: rgba(0, 0, 0, 0.10) !important; }
+[data-theme="light"] .ring-white\/20               { --tw-ring-color: rgba(0, 0, 0, 0.15) !important; }
+
+/* ── Notification dot background ring ───────────────────────────────── */
+[data-theme="light"] .ring-bg                      { --tw-ring-color: #f0f2f8 !important; }
+
+/* ── Divide lines ─────────────────────────────────────────────────────── */
+[data-theme="light"] .divide-white\/\[0\.06\] > * + * { border-color: rgba(0, 0, 0, 0.06) !important; }
+
+/* ── Focus rings ─────────────────────────────────────────────────────── */
+[data-theme="light"] .focus\:border-brand-400\/50:focus   { border-color: rgba(59, 107, 255, 0.5) !important; }
+[data-theme="light"] .focus\:bg-white\/\[0\.05\]:focus    { background-color: rgba(255, 255, 255, 0.95) !important; }
+[data-theme="light"] .focus\:bg-white\/\[0\.06\]:focus    { background-color: rgba(255, 255, 255, 0.98) !important; }
+
+/* ── Text gradient — redefine for light mode ─────────────────────────── */
+[data-theme="light"] .text-gradient {
+  background: linear-gradient(180deg, #0a0c1c 0%, rgba(10, 12, 28, 0.70) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Glassmorphism liquid card ───────────────────────────────────────── */
+[data-theme="light"] .liquid-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.70) 35%,
+    rgba(59, 107, 255, 0.04) 65%,
+    rgba(139, 92, 246, 0.03) 85%,
+    rgba(255, 255, 255, 0.80) 100%
+  ) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 48px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ── Bento cards ─────────────────────────────────────────────────────── */
+[data-theme="light"] .bento-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.90) 0%,
+    rgba(255, 255, 255, 0.75) 40%,
+    rgba(59, 107, 255, 0.04) 70%,
+    rgba(139, 92, 246, 0.02) 100%
+  ) !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 12px 48px rgba(0, 0, 0, 0.10) !important;
+}
+
