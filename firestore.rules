@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Публичные коллекции (читаются до/без авторизации) ───────────────────
+
+    // Индекс username → email (вход по никнейму)
+    match /userLogins/{key} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Субдомены — нужны до логина для определения тенанта
+    match /subdomains/{subdomain} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Документ центра (публичный) — LoginPage читает до авторизации для брендинга
+    // Содержит только: name, subdomain, logoUrl, loginTheme — ничего секретного
+    match /centers/{centerId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+
+      // Суб-коллекции с реальными данными — только авторизованные
+      match /rooms/{roomId}       { allow read, write: if request.auth != null; }
+      match /courses/{courseId}   { allow read, write: if request.auth != null; }
+      match /groups/{groupId}     { allow read, write: if request.auth != null; }
+      match /students/{studentId} { allow read, write: if request.auth != null; }
+      match /lessons/{lessonId}   { allow read, write: if request.auth != null; }
+      match /payments/{paymentId} { allow read, write: if request.auth != null; }
+      match /tests/{testId}       { allow read, write: if request.auth != null; }
+      match /testSubmissions/{submissionId} { allow read, write: if request.auth != null; }
+    }
+
+    // ─── Только авторизованные ────────────────────────────────────────────────
+
+    match /userProfiles/{userId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /featureFlags/{flagId}         { allow read, write: if request.auth != null; }
+    match /platformPlans/{planId}        { allow read, write: if request.auth != null; }
+    match /platformNews/{newsId}         { allow read, write: if request.auth != null; }
+    match /platformVersions/{versionId}  { allow read, write: if request.auth != null; }
+    match /platformPayments/{paymentId}  { allow read, write: if request.auth != null; }
+    match /platformCampaigns/{id}        { allow read, write: if request.auth != null; }
+    match /platformCoupons/{id}          { allow read, write: if request.auth != null; }
+    match /platformConfig/{docId} {
+      // publicMeta stores { initialized: true } — readable without auth for SetupAdminPage check
+      allow read: if docId == "publicMeta" || request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /supportTickets/{ticketId}     { allow read, write: if request.auth != null; }
+    match /auditLogs/{logId}             { allow read, write: if request.auth != null; }
+  }
+}

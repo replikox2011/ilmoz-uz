@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ilmoz EOS — Pitch Deck</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-background: #060812;
+            --color-card-bg: rgba(18, 24, 43, 0.75);
+            --color-card-border: rgba(95, 144, 255, 0.18);
+            --color-primary: #5f90ff;
+            --color-accent: #2450f5;
+            --color-emerald: #34d399;
+            --color-text-white: #ffffff;
+            --color-text-muted: #94a3b8;
+            --font-heading: 'Space Grotesk', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--color-background);
+            color: var(--color-text-white);
+            font-family: var(--font-body);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide-deck {
+            position: absolute;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: calc(100vh * 16 / 9);
+            max-height: calc(100vw * 9 / 16);
+            margin: auto;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding: 50px 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            background: radial-gradient(circle at 80% 20%, rgba(36, 80, 245, 0.15), transparent 40%),
+                        radial-gradient(circle at 10% 80%, rgba(52, 211, 153, 0.08), transparent 40%),
+                        var(--color-background);
+        }
+
+        .slide.active { opacity: 1; visibility: visible; }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 22px;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #5f90ff, #2450f5);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(95, 144, 255, 0.5);
+        }
+
+        .slide-title {
+            font-family: var(--font-heading);
+            font-size: clamp(32px, 3.5vw, 46px);
+            font-weight: 700;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: rgba(95, 144, 255, 0.12);
+            border: 1px solid rgba(95, 144, 255, 0.3);
+            color: var(--color-primary);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            height: 100%;
+            align-items: center;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            height: 100%;
+            align-items: center;
+        }
+
+        .card {
+            background: var(--color-card-bg);
+            border: 1px solid var(--color-card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(95, 144, 255, 0.4);
+        }
+
+        .card-number {
+            font-family: var(--font-heading);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-primary);
+            opacity: 0.8;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-text-white);
+        }
+
+        .card-desc {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--color-text-muted);
+        }
+
+        /* Hero Slide */
+        .hero-title {
+            font-family: var(--font-heading);
+            font-size: clamp(48px, 5vw, 72px);
+            font-weight: 700;
+            line-height: 1.05;
+            background: linear-gradient(135deg, #ffffff 0%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            color: var(--color-text-muted);
+            max-width: 700px;
+            line-height: 1.6;
+        }
+
+        .hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            border-radius: 100px;
+            color: var(--color-emerald);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Chart container */
+        .chart-box {
+            position: relative;
+            width: 100%;
+            height: 280px;
+        }
+
+        /* Controls */
+        .nav-controls {
+            position: fixed;
+            bottom: 24px;
+            right: 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+            background: rgba(18, 24, 43, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover { background: var(--color-primary); }
+
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #5f90ff, #34d399);
+            z-index: 100;
+            transition: width 0.3s;
+        }
+
+        .stat-huge {
+            font-family: var(--font-heading);
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--color-emerald);
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="slide-deck">
+
+        <!-- SLIDE 1: Title -->
+        <div class="slide active">
+            <div class="slide-header">
+                <div class="brand-logo">
+                    <div class="brand-mark">⚡</div>
+                    <span>Ilmoz EOS</span>
+                </div>
+                <div class="badge">Pre-Seed Pitch Deck</div>
+            </div>
+
+            <div style="margin: auto 0; display: flex; flex-direction: column; gap: 24px;">
+                <div class="hero-pill">
+                    <span style="width:8px; height:8px; border-radius:50%; background:#34d399; display:inline-block;"></span>
+                    Education Operating System
+                </div>
+                <h1 class="hero-title">Умная ИИ-система для управления учебными центрами</h1>
+                <p class="hero-subtitle">
+                    Объединяем CRM, LMS, мультиарендность (Multi-tenancy) и искусственный интеллект в единую операционную экосистему.
+                </p>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,0.08); padding-top:20px;">
+                <div>
+                    <p style="font-size:12px; color:var(--color-text-muted);">ОСНОВАТЕЛИ</p>
+                    <p style="font-size:15px; font-weight:600; margin-top:4px;">Kamalov Nodirbek (Founder) & Kalbaev Azizbek (Co-Founder)</p>
+                </div>
+                <div>
+                    <p style="font-size:12px; color:var(--color-text-muted);">ЗАПРОС ИНВЕСТИЦИЙ</p>
+                    <p style="font-size:18px; font-weight:700; color:var(--color-emerald); margin-top:2px;">$30,000 / 12 месяцев</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Problem -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 class="slide-title">Проблема рынка</h2>
+                <div class="badge" style="border-color:rgba(239,68,68,0.4); color:#ef4444; background:rgba(239,68,68,0.1);">Inefficiency</div>
+            </div>
+
+            <div class="grid-3" style="margin: auto 0;">
+                <div class="card">
+                    <div class="card-number" style="color:#ef4444;">01</div>
+                    <div class="card-title">Хаос софта</div>
+                    <div class="card-desc">Учебные центры используют Excel для финансов, бумаги для посещаемости и Telegram для чатов. Данные теряются.</div>
+                </div>
+                <div class="card">
+                    <div class="card-number" style="color:#ef4444;">02</div>
+                    <div class="card-title">Потеря 40% времени</div>
+                    <div class="card-desc">Администраторы и учителя вместо учеников заняты бесконечной механической рутиной и ручным обзвоном.</div>
+                </div>
+                <div class="card">
+                    <div class="card-number" style="color:#ef4444;">03</div>
+                    <div class="card-title">Слепая зона</div>
+                    <div class="card-desc">Владельцы не видят реальную аналитику долгов студентов, доходность филиалов и отток клиентов в реальном времени.</div>
+                </div>
+            </div>
+
+            <div style="font-size:13px; color:var(--color-text-muted);">Итог: Образовательный бизнес теряет до 30% потенциальной выручки ежемесячно.</div>
+        </div>
+
+        <!-- SLIDE 3: Solution -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 class="slide-title">Решение: Ilmoz EOS</h2>
+                <div class="badge">Platform</div>
+            </div>
+
+            <div class="grid-3" style="margin: auto 0;">
+                <div class="card" style="border-color: rgba(95,144,255,0.4);">
+                    <div class="card-number">🏢</div>
+                    <div class="card-title">Multi-Tenancy</div>
+                    <div class="card-desc">Персональный субдомен (center.ilmoz.uz) и изолированное безопасное пространство для каждого бренда.</div>
+                </div>
+                <div class="card" style="border-color: rgba(52,211,153,0.4);">
+                    <div class="card-number">🤖</div>
+                    <div class="card-title">Ilmoz Copilot</div>
+                    <div class="card-desc">Встроенный ИИ анализирует задолженности, генерирует материалы к урокам и отвечает студентам 24/7.</div>
+                </div>
+                <div class="card" style="border-color: rgba(95,144,255,0.4);">
+                    <div class="card-number">📊</div>
+                    <div class="card-title">CRM & ERP</div>
+                    <div class="card-desc">Автоматизация кассы, посещаемости, расписания аудиторий и мгновенная аналитика для владельцев.</div>
+                </div>
+            </div>
+
+            <div style="font-size:13px; color:var(--color-emerald);">Результат: Сокращение рутины на 40% и рост удержания студентов на 25%.</div>
+        </div>
+
+        <!-- SLIDE 4: Financial Use of Funds ($30,000) -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 class="slide-title">Распределение $30,000</h2>
+                <div class="badge">Use of Funds</div>
+            </div>
+
+            <div class="grid-2" style="margin: auto 0;">
+                <div class="chart-box">
+                    <canvas id="budgetChart"></canvas>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div class="card" style="padding:16px 24px; gap:4px;">
+                        <div style="display:flex; justify-content:space-between; font-weight:700;">
+                            <span>🎯 Продажи и Маркетинг (40%)</span>
+                            <span style="color:var(--color-primary);">$12,000</span>
+                        </div>
+                        <div class="card-desc" style="font-size:12px;">B2B реклама и прямые продажи для привлечения 50 центров.</div>
+                    </div>
+                    <div class="card" style="padding:16px 24px; gap:4px;">
+                        <div style="display:flex; justify-content:space-between; font-weight:700;">
+                            <span>⚡ Сервера, AI & SMS (30%)</span>
+                            <span style="color:var(--color-emerald);">$9,000</span>
+                        </div>
+                        <div class="card-desc" style="font-size:12px;">Multi-tenant хостинг, токены Gemini/OpenAI, SMS-уведомления.</div>
+                    </div>
+                    <div class="card" style="padding:16px 24px; gap:4px;">
+                        <div style="display:flex; justify-content:space-between; font-weight:700;">
+                            <span>📱 Моб. Приложение (20%)</span>
+                            <span style="color:#a855f7;">$6,000</span>
+                        </div>
+                        <div class="card-desc" style="font-size:12px;">Релиз приложения для студентов/родителей + юр. оферта.</div>
+                    </div>
+                    <div class="card" style="padding:16px 24px; gap:4px;">
+                        <div style="display:flex; justify-content:space-between; font-weight:700;">
+                            <span>🛡️ Резерв (10%)</span>
+                            <span style="color:#f59e0b;">$3,000</span>
+                        </div>
+                        <div class="card-desc" style="font-size:12px;">Поддержка пользователей 24/7 и непредвиденные расходы.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Team & Goals -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2 class="slide-title">Команда и Цели на 12 месяцев</h2>
+                <div class="badge">Milestones</div>
+            </div>
+
+            <div class="grid-2" style="margin: auto 0;">
+                <div class="card" style="height:100%; justify-content:center;">
+                    <div style="font-size:14px; font-weight:700; color:var(--color-primary); letter-spacing:0.05em;">FOUNDERS</div>
+                    <div style="display:flex; flex-direction:column; gap:16px; margin-top:12px;">
+                        <div>
+                            <div style="font-size:18px; font-weight:700;">Kamalov Nodirbek</div>
+                            <div style="font-size:13px; color:var(--color-text-muted);">Founder & Visionary (Продукт, ИИ, Архитектура)</div>
+                        </div>
+                        <div style="height:1px; background:rgba(255,255,255,0.08);"></div>
+                        <div>
+                            <div style="font-size:18px; font-weight:700;">Kalbaev Azizbek</div>
+                            <div style="font-size:13px; color:var(--color-text-muted);">Co-Founder & COO (Операции, Продажи, Масштабирование)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="height:100%; justify-content:center; border-color:rgba(52,211,153,0.3);">
+                    <div style="font-size:14px; font-weight:700; color:var(--color-emerald); letter-spacing:0.05em;">TARGET KPIs</div>
+                    <div style="display:flex; flex-direction:column; gap:16px; margin-top:12px;">
+                        <div>
+                            <div class="stat-huge">50</div>
+                            <div style="font-size:13px; color:var(--color-text-muted);">Подключенных учебных центров через 12 месяцев</div>
+                        </div>
+                        <div>
+                            <div class="stat-huge" style="color:var(--color-primary);">$3,000+</div>
+                            <div style="font-size:13px; color:var(--color-text-muted);">Ежемесячная регулярная выручка (MRR)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size:14px; text-align:center; color:var(--color-text-white);">
+                🤝 <b>Оффер инвестору</b>: $30,000 за <b>7% – 10% доли</b> компании | Contact: <b>ilmoz.uz</b>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">←</button>
+        <span style="font-size:13px; font-weight:600;"><span id="current">1</span> / <span id="total">5</span></span>
+        <button class="nav-btn" onclick="nextSlide()">→</button>
+    </div>
+
+    <script>
+        let current = 1;
+        const total = document.querySelectorAll('.slide').length;
+        document.getElementById('total').textContent = total;
+
+        function showSlide(n) {
+            if (n < 1) n = 1;
+            if (n > total) n = total;
+            current = n;
+            document.querySelectorAll('.slide').forEach((s, i) => {
+                s.classList.toggle('active', i === n - 1);
+            });
+            document.getElementById('current').textContent = n;
+            document.getElementById('progressBar').style.width = (n / total * 100) + '%';
+        }
+
+        function nextSlide() { showSlide(current + 1); }
+        function prevSlide() { showSlide(current - 1); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        // Initialize Chart.js for Budget
+        document.addEventListener("DOMContentLoaded", () => {
+            const ctx = document.getElementById('budgetChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Маркетинг & Продажи', 'Сервера, AI & SMS', 'Моб. Приложение', 'Резерв'],
+                        datasets: [{
+                            data: [12000, 9000, 6000, 3000],
+                            backgroundColor: ['#5f90ff', '#34d399', '#a855f7', '#f59e0b'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 12 } } }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        });
+
+        showSlide(1);
+    </script>
+</body>
+</html>
