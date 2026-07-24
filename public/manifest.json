@@ -1,0 +1,9 @@
+{
+  "short_name": "Ilmoz",
+  "name": "Ilmoz — Education Operating System",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#05060a",
+  "background_color": "#05060a"
+}
