@@ -42,8 +42,8 @@ export function FloatingCopilot() {
   const systemPrompt = React.useMemo(() => {
     const activeGroups = data.groups.filter(g => g.status === "active").length;
     return [
-      `Ты Nexo — AI-ассистент в системе управления учебным центром Ilmoz.`,
-      `Центр: «${center?.name ?? ""}». Данные: ${activeGroups} активных групп, ${data.students.length} студентов, ${data.rooms.length} аудиторий, ${data.teachers.length} преподавателей.`,
+      `Ты NexoGPT — AI-ассистент в системе управления учебным центром Ilmoz.`,
+      `Центр: «${center?.name ?? ""}». Данные: ${activeGroups} active groups, ${data.students.length} students, ${data.rooms.length} rooms, ${data.teachers.length} teachers.`,
       `У тебя есть инструменты для просмотра и создания данных (групп, студентов, преподавателей, аудиторий).`,
       `Ты умеешь генерировать тесты по теме (generate_test) — с поиском актуальной информации в интернете. Перед вызовом уточни тему, число вопросов и сколько с вариантами ответа. Готовый черновик активируется на странице «Тесты».`,
       `ВАЖНО: Перед созданием любой записи — сначала уточни все необходимые детали у пользователя. Например, перед созданием ученика спроси: номер телефона, имя родителя, телефон родителя. Перед созданием преподавателя спроси: логин, email, телефон. Не создавай записи пока не получишь подтверждение от пользователя.`,
@@ -197,7 +197,7 @@ export function FloatingCopilot() {
             ? "bg-brand-600 ring-2 ring-brand-400/50"
             : "bg-brand-500 hover:bg-brand-400"
         )}
-        title="Nexo"
+        title="NexoGPT"
       >
         <AnimatePresence mode="sync">
           {open ? (

@@ -666,7 +666,7 @@ function MockDashboard({ t }: { t: (k: string) => string }) {
               <Sparkles className="h-3 w-3 text-brand-200" />
             </div>
             <p className="text-[9px] text-white/65">
-              <span className="font-semibold text-brand-200">Nexo</span>{' '}
+              <span className="font-semibold text-brand-200">NexoGPT</span>{' '}
               found 3 students ready for an advanced group.
             </p>
             <ArrowRight className="ml-auto h-3 w-3 shrink-0 text-brand-300" />
@@ -705,7 +705,7 @@ function ChatMock({ t }: { t: (k: string) => string }) {
             <Bot className="h-4 w-4 text-brand-300/80" />
           </div>
           <span className="text-sm font-light tracking-wide text-white/80">
-            Nexo
+            NexoGPT
           </span>
           <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
         </div>

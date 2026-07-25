@@ -47,7 +47,7 @@ export async function generateTestWithWebSearch(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://nexo-eos.app",
-      "X-Title": "Nexo",
+      "X-Title": "NexoGPT",
     },
     body: JSON.stringify({
       model: "nvidia/nemotron-3-ultra-550b-a55b:free",

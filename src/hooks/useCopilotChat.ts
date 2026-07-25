@@ -97,7 +97,7 @@ async function streamOnce(
   };
   if (!isGroq) {
     headers["HTTP-Referer"] = "https://nexo-eos.app";
-    headers["X-Title"] = "Nexo";
+    headers["X-Title"] = "NexoGPT";
   }
 
   const resp = await fetch(url, {
