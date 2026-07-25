@@ -28,6 +28,7 @@ export function Protected({ children }: { children: React.ReactNode }) {
 
 export function BootScreen() {
   const { t } = useI18n();
+  const { activeSubdomain } = useAuth();
 
   return (
     <div className="grid min-h-screen place-items-center">
@@ -38,7 +39,9 @@ export function BootScreen() {
         <div className="h-1 w-40 overflow-hidden rounded-full bg-white/10">
           <div className="h-full w-1/2 animate-shimmer rounded-full brand-gradient" />
         </div>
-        <p className="text-sm text-white/40">{t("boot.loading")}</p>
+        <p className="text-sm text-white/40">
+          {activeSubdomain ? t("boot.loading") : t("boot.loadingNormal")}
+        </p>
       </div>
     </div>
   );

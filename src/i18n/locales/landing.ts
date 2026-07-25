@@ -176,7 +176,7 @@ export const landing = {
     "landing.nav.getStarted": "Boshlash",
 
     "landing.hero.badge": "Ta'lim uchun AI operatsion tizim",
-    "landing.hero.titleA": "O'quv markazingizni ",
+    "landing.hero.titleA": "O'quv markazingiz endi ",
     "landing.hero.titleAccent": "avtopilotda",
     "landing.hero.subtitle":
       "Baholar, jadval va o'quvchilar o'zlashtirishini dunyodagi eng aqlli ta'lim operatsion tizimi bilan avtomatlashtiring.",

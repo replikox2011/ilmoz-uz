@@ -1170,6 +1170,24 @@ export function LandingPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Language switcher */}
+            <div className="mr-2 flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1">
+              {languages.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => setLanguage(l.code)}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wider transition-all duration-300 cursor-pointer',
+                    language === l.code
+                      ? 'bg-brand-500 text-white shadow-[0_0_12px_rgba(59,107,255,0.45)]'
+                      : 'text-white/40 hover:text-white/80'
+                  )}
+                >
+                  {l.short}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={goSignIn}
               className="rounded-full px-5 py-2.5 text-sm font-light tracking-wide text-white/70 transition-all duration-300 hover:bg-white/[0.04] hover:text-white cursor-pointer"
@@ -1248,7 +1266,7 @@ export function LandingPage() {
 
             <h1 className="mx-auto max-w-6xl text-[3.1rem] font-medium leading-[0.96] tracking-[-0.065em] sm:text-7xl md:text-[6.5rem]">
               <span className="hero-title-line text-gradient">{t('landing.hero.titleA')}</span>
-              <span className="hero-title-line block pt-2 font-semibold md:pt-4">
+              <span className="hero-title-line block pt-0.5 font-semibold md:pt-1">
                 <span className="text-gradient-animated">
                   {t('landing.hero.titleAccent')}
                 </span>
@@ -1559,67 +1577,58 @@ export function LandingPage() {
       <footer ref={footerRef} className="relative border-t border-white/[0.04] py-20">
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-80" />
         <div className={cn(MAX, 'relative z-10')}>
-          <div className="mb-16 grid grid-cols-2 gap-10 md:grid-cols-6">
-            <div className="footer-col col-span-2">
+          <div className="mb-16 grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-6">
+            <div className="footer-col col-span-1 md:col-span-2">
               <Logo size={30} />
               <p className="mt-6 max-w-xs text-sm font-extralight leading-relaxed tracking-wide text-white/40">
                 {t('landing.footer.tagline')}
               </p>
-              <div className="mt-8 flex gap-4">
-                {[Globe, AtSign].map((Icon, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-label={i === 0 ? 'Website' : 'Email'}
-                    className="grid h-10 w-10 place-items-center rounded-full border border-white/[0.06] backdrop-blur-sm transition-all duration-300 hover:border-white/15 hover:bg-white/[0.04] hover:scale-110 active:scale-95 cursor-pointer"
-                  >
-                    <Icon className="h-4 w-4 text-white/50" />
-                  </button>
-                ))}
-              </div>
             </div>
-            <div className="footer-col">
-              <FooterCol
-                title={t('landing.footer.product')}
-                links={[
-                  t('landing.nav.platform'),
-                  t('landing.nav.aiFeatures'),
-                  t('landing.nav.pricing'),
-                ]}
-              />
-            </div>
-            <div className="footer-col">
-              <FooterCol
-                title={t('landing.footer.resources')}
-                links={['Docs', 'API', 'Help']}
-              />
-            </div>
-            <div className="footer-col">
-              <FooterCol
-                title={t('landing.footer.company')}
-                links={['About', 'Careers', 'Privacy']}
-              />
-            </div>
-            <div className="footer-col">
+
+            <div className="footer-col col-span-1 md:col-span-2">
               <h5 className="mb-6 text-sm font-medium tracking-wide text-white/80">
-                {t('landing.footer.language')}
+                Instagram
               </h5>
-              <div className="flex flex-col gap-2">
-                {languages.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => setLanguage(l.code)}
-                    className={cn(
-                      'text-left text-sm font-light tracking-wide transition-all duration-300 cursor-pointer',
-                      language === l.code
-                        ? 'text-brand-300'
-                        : 'text-white/40 hover:text-white/70'
-                    )}
+              <ul className="space-y-4 text-sm font-light text-white/40">
+                <li>
+                  <a
+                    href="https://instagram.com/ilmoz_uz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors duration-300 hover:text-brand-200/80 cursor-pointer"
                   >
-                    {l.label} ({l.short})
-                  </button>
-                ))}
-              </div>
+                    insta: ilmoz_uz
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div className="footer-col col-span-1 md:col-span-2">
+              <h5 className="mb-6 text-sm font-medium tracking-wide text-white/80">
+                Telegram
+              </h5>
+              <ul className="space-y-4 text-sm font-light text-white/40">
+                <li>
+                  <a
+                    href="https://t.me/ilmoz_news"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors duration-300 hover:text-brand-200/80 cursor-pointer"
+                  >
+                    tg: ilmoz_news
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://t.me/ilmoz_support"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors duration-300 hover:text-brand-200/80 cursor-pointer"
+                  >
+                    tg: ilmoz_support
+                  </a>
+                </li>
+              </ul>
             </div>
           </div>
           <div className="border-t border-white/[0.04] pt-8 text-center text-sm font-extralight tracking-wide text-white/30">

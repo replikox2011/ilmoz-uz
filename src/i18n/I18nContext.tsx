@@ -31,6 +31,7 @@ const layoutKeys = {
   en: {
     "app.name": "Ilmoz",
     "boot.loading": "Booting your workspace...",
+    "boot.loadingNormal": "Loading...",
     "language.label": "Language",
     "language.en": "English",
     "language.ru": "Russian",
@@ -314,6 +315,7 @@ const layoutKeys = {
   ru: {
     "app.name": "Ilmoz",
     "boot.loading": "Загрузка воркспейса...",
+    "boot.loadingNormal": "Загрузка...",
     "language.label": "Язык",
     "language.en": "Английский",
     "language.ru": "Русский",
@@ -597,6 +599,7 @@ const layoutKeys = {
   uz: {
     "app.name": "Ilmoz",
     "boot.loading": "Ish muhiti yuklanmoqda...",
+    "boot.loadingNormal": "Yuklanmoqda...",
     "language.label": "Til",
     "language.en": "Inglizcha",
     "language.ru": "Ruscha",
@@ -956,10 +959,7 @@ const I18nContext = React.createContext<I18nContextValue | null>(null);
 function readInitialLanguage(): Language {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === "en" || saved === "ru" || saved === "uz") return saved;
-
-  const browser = navigator.language.slice(0, 2);
-  if (browser === "ru" || browser === "uz") return browser;
-  return "en";
+  return "uz";
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
