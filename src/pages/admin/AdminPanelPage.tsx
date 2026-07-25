@@ -62,20 +62,20 @@ export function AdminPanelPage() {
   const pendingPayments = data.payments.filter((p) => p.status === "pending").length;
 
   const stats = [
-    { label: t("nav.students"),  value: data.loading ? "—" : data.students.length,  icon: GraduationCap, accent: "#0ea5e9" },
-    { label: t("nav.teachers"),  value: data.loading ? "—" : data.teachers.length,  icon: UserSquare2,   accent: "#a855f7" },
-    { label: t("nav.groups"),    value: data.loading ? "—" : activeGroups.length,   icon: Users,         accent: "#3b6bff" },
-    { label: t("nav.rooms"),     value: data.loading ? "—" : data.rooms.length,     icon: DoorOpen,      accent: "#f59e0b" },
+    { label: t("nav.students"), value: data.loading ? "—" : data.students.length, icon: GraduationCap, accent: "#0ea5e9" },
+    { label: t("nav.teachers"), value: data.loading ? "—" : data.teachers.length, icon: UserSquare2, accent: "#a855f7" },
+    { label: t("nav.groups"), value: data.loading ? "—" : activeGroups.length, icon: Users, accent: "#3b6bff" },
+    { label: t("nav.rooms"), value: data.loading ? "—" : data.rooms.length, icon: DoorOpen, accent: "#f59e0b" },
   ];
 
   const actions = [
-    { icon: GraduationCap, label: t("nav.students"),   desc: "Manage students & enrollments", to: "/students",  accent: "#0ea5e9" },
-    { icon: UserSquare2,   label: t("nav.teachers"),   desc: "Staff and teacher accounts",     to: "/teachers",  accent: "#a855f7" },
-    { icon: Users,         label: t("nav.groups"),     desc: "Classes, schedules, courses",    to: "/groups",    accent: "#3b6bff" },
-    { icon: Wallet,        label: t("nav.finance"),    desc: "Payments and invoices",          to: "/finance",   accent: "#f59e0b" },
-    { icon: BarChart3,     label: t("nav.analytics"),  desc: "Reports and insights",           to: "/analytics", accent: "#ec4899" },
-    { icon: Sparkles,      label: t("nav.copilot"),    desc: "AI assistant for your center",   to: "/ai",        accent: "#6366f1" },
-    { icon: Settings,      label: t("nav.settings"),   desc: "Center settings & login theme",  to: "/settings",  accent: "#64748b" },
+    { icon: GraduationCap, label: t("nav.students"), desc: "Manage students & enrollments", to: "/students", accent: "#0ea5e9" },
+    { icon: UserSquare2, label: t("nav.teachers"), desc: "Staff and teacher accounts", to: "/teachers", accent: "#a855f7" },
+    { icon: Users, label: t("nav.groups"), desc: "Classes, schedules, courses", to: "/groups", accent: "#3b6bff" },
+    { icon: Wallet, label: t("nav.finance"), desc: "Payments and invoices", to: "/finance", accent: "#f59e0b" },
+    { icon: BarChart3, label: t("nav.analytics"), desc: "Reports and insights", to: "/analytics", accent: "#ec4899" },
+    { icon: Sparkles, label: t("nav.copilot"), desc: "AI assistant for your center", to: "/ai", accent: "#6366f1" },
+    { icon: Settings, label: t("nav.settings"), desc: "Center settings & login theme", to: "/settings", accent: "#64748b" },
   ];
 
   return (
