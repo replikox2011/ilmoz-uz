@@ -10,7 +10,6 @@ import {
   Check,
   CheckCircle2,
   Globe,
-  AtSign,
   ArrowRight,
   CalendarDays,
   GraduationCap,
@@ -530,29 +529,6 @@ function PriceCard({
   );
 }
 
-// ── Footer Column ───────────────────────────────────────────────
-
-function FooterCol({ title, links }: { title: string; links: string[] }) {
-  return (
-    <div>
-      <h5 className="mb-6 text-sm font-medium tracking-wide text-white/80">
-        {title}
-      </h5>
-      <ul className="space-y-4 text-sm font-light text-white/40">
-        {links.map((l) => (
-          <li key={l}>
-            <button
-              type="button"
-              className="transition-colors duration-300 hover:text-brand-200/80 cursor-pointer"
-            >
-              {l}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 // ── Mock Dashboard ──────────────────────────────────────────────
 
