@@ -53,13 +53,30 @@ export interface Center {
   id: string;
   name: string;
   slug: string;
-  subdomain?: string;   // unique subdomain, e.g. "applikata" → applikata.ilmoz.app
-  description?: string; // short center description shown on subdomain login page
-  logoUrl?: string;     // Firebase Storage download URL
+  subdomain?: string;      // unique subdomain, e.g. "applikata" → applikata.ilmoz.app
+  description?: string;    // short center description shown on subdomain login page
+  logoUrl?: string;        // Firebase Storage download URL
   currency: string;
   createdAt: string;
   loginTheme?: LoginTheme; // subdomain login page customization (visual builder)
+  // ── Network / Branch support ───────────────────────────────────────────────
+  networkId?: string;        // id of the CenterNetwork this center belongs to
+  isHeadquarters?: boolean;  // true for the root/HQ center of a network
 }
+
+/**
+ * A network groups one HQ center with one or more branch centers.
+ * Only the owner of the HQ center can manage the network.
+ */
+export interface CenterNetwork {
+  id: string;
+  name: string;
+  ownerId: string;               // Firebase UID of the HQ owner
+  headquartersCenterId: string;  // Center.id of the HQ
+  branchIds: string[];           // Center.id[] of every branch
+  createdAt: string;             // ISO string
+}
+
 
 export interface User {
   id: string;          // Firebase Auth UID

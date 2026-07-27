@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import {
-  Users, GraduationCap, UserSquare2, DoorOpen, BookOpen,
+  Users, GraduationCap, UserSquare2, DoorOpen,
   Wallet, BarChart3, Settings, Sparkles, Globe, Shield,
   ExternalLink, Building2,
 } from "lucide-react";

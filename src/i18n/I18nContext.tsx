@@ -60,6 +60,7 @@ const layoutKeys = {
     "nav.children": "My Children",
     "nav.notifications": "Notifications",
     "nav.settings": "Settings",
+    "nav.network": "Network",
 
     "sidebar.workspace": "Workspace",
     "sidebar.workspaceSuffix": "workspace",
@@ -86,6 +87,7 @@ const layoutKeys = {
     "topbar.nav.copilot.subtitle": "AI assistant for teachers",
     "topbar.nav.notifications.subtitle": "Notification center",
     "topbar.nav.settings.subtitle": "Learning center configuration",
+    "topbar.nav.network.subtitle": "Manage branches and headquarters",
     "topbar.student.noPhone": "No phone",
     "topbar.group.active": "Active",
     "topbar.group.completed": "Completed",
@@ -344,6 +346,7 @@ const layoutKeys = {
     "nav.children": "Мои дети",
     "nav.notifications": "Уведомления",
     "nav.settings": "Настройки",
+    "nav.network": "Сеть",
 
     "sidebar.workspace": "Воркспейс",
     "sidebar.workspaceSuffix": "воркспейс",
@@ -370,6 +373,7 @@ const layoutKeys = {
     "topbar.nav.copilot.subtitle": "ИИ-помощник для учителей",
     "topbar.nav.notifications.subtitle": "Центр уведомлений",
     "topbar.nav.settings.subtitle": "Конфигурация учебного центра",
+    "topbar.nav.network.subtitle": "Управление филиалами и главным центром",
     "topbar.student.noPhone": "Нет телефона",
     "topbar.group.active": "Активна",
     "topbar.group.completed": "Завершена",
@@ -628,6 +632,7 @@ const layoutKeys = {
     "nav.children": "Farzandlarim",
     "nav.notifications": "Bildirishnomalar",
     "nav.settings": "Sozlamalar",
+    "nav.network": "Tarmoq",
 
     "sidebar.workspace": "Ish muhiti",
     "sidebar.workspaceSuffix": "ish muhiti",
@@ -654,6 +659,7 @@ const layoutKeys = {
     "topbar.nav.copilot.subtitle": "O'qituvchilar uchun AI yordamchi",
     "topbar.nav.notifications.subtitle": "Bildirishnomalar markazi",
     "topbar.nav.settings.subtitle": "O'quv markazi sozlamalari",
+    "topbar.nav.network.subtitle": "Filiallar va bosh markazni boshqarish",
     "topbar.student.noPhone": "Telefon yo'q",
     "topbar.group.active": "Faol",
     "topbar.group.completed": "Yakunlangan",

@@ -11,7 +11,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
-import { Center, Role, User } from "../types";
+import { Center, CenterNetwork, Role, User } from "../types";
 import { firestoreRepository } from "../data/firestoreRepository";
 import { extractSubdomain, ROOT_DOMAIN } from "../lib/subdomain";
 
@@ -42,6 +42,10 @@ interface AuthContextValue {
   activeSubdomain: string | null;
   /** centerId that owns the active subdomain; null on the root domain */
   subdomainCenterId: string | null;
+  /** The branch network this center belongs to (null if not in a network) */
+  network: CenterNetwork | null;
+  /** True if the current center is the headquarters of a network */
+  isHeadquarters: boolean;
 
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
   const [needsCenterSetup, setNeedsCenterSetup] = React.useState(false);
   const [needsPhoneVerification, setNeedsPhoneVerification] = React.useState(false);
+  const [network, setNetwork] = React.useState<CenterNetwork | null>(null);
 
   // Detect subdomain once on mount
   const activeSubdomain = React.useMemo(
@@ -112,6 +117,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(profile);
       setCenter(c);
       setNeedsCenterSetup(false);
+      // Load network if center belongs to one
+      if (c?.networkId) {
+        firestoreRepository.getNetwork(c.networkId).then(setNetwork).catch(() => {});
+      } else {
+        setNetwork(null);
+      }
 
       // Students must verify phone on first login
       if (profile.role === "student" && profile.phoneVerified === false) {
@@ -316,6 +327,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     needsPhoneVerification,
     activeSubdomain,
     subdomainCenterId,
+    network,
+    isHeadquarters: center?.isHeadquarters ?? false,
     signInWithGoogle,
     signInWithEmail,
     signInWithLogin,

@@ -779,6 +779,29 @@ export function LandingPage() {
   const goSignIn = () => navigate('/login');
   const goStart = () => navigate('/register');
 
+  React.useEffect(() => {
+    const html = document.documentElement;
+    const originalTheme = html.getAttribute("data-theme") || "dark";
+    
+    // Force dark theme for landing page
+    html.setAttribute("data-theme", "dark");
+    html.classList.remove("light");
+    html.classList.add("dark");
+
+    return () => {
+      // Restore original theme when leaving landing page
+      if (originalTheme === "light") {
+        html.setAttribute("data-theme", "light");
+        html.classList.remove("dark");
+        html.classList.add("light");
+      } else {
+        html.setAttribute("data-theme", "dark");
+        html.classList.remove("light");
+        html.classList.add("dark");
+      }
+    };
+  }, []);
+
   const landingRef = React.useRef<HTMLDivElement>(null);
   const heroRef = React.useRef<HTMLElement>(null);
   const progressRef = React.useRef<HTMLDivElement>(null);

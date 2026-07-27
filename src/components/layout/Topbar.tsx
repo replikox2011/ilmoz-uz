@@ -4,7 +4,7 @@ import {
   Search, Bell, Command, LogOut, Users,
   GraduationCap, Settings, Sparkles,
   ArrowRight, LayoutDashboard, CalendarDays,
-  Wallet, BarChart3, Languages, Sun, Moon, type LucideIcon
+  Wallet, BarChart3, Languages, Sun, Moon, GitBranch, type LucideIcon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
@@ -47,6 +47,7 @@ export function Topbar() {
     { id: "nav-teachers", title: t("nav.teachers"), subtitle: t("topbar.nav.teachers.subtitle"), type: "navigation", url: "/teachers", icon: Users },
     { id: "nav-finance", title: t("nav.finance"), subtitle: t("topbar.nav.finance.subtitle"), type: "navigation", url: "/finance", icon: Wallet },
     { id: "nav-analytics", title: t("nav.analytics"), subtitle: t("topbar.nav.analytics.subtitle"), type: "navigation", url: "/analytics", icon: BarChart3 },
+    { id: "nav-network", title: t("nav.network"), subtitle: t("topbar.nav.network.subtitle"), type: "navigation", url: "/network", icon: GitBranch },
     { id: "nav-copilot", title: t("nav.copilot"), subtitle: t("topbar.nav.copilot.subtitle"), type: "navigation", url: "/ai", icon: Sparkles },
     { id: "nav-notifications", title: t("nav.notifications"), subtitle: t("topbar.nav.notifications.subtitle"), type: "navigation", url: "/notifications", icon: Bell },
     { id: "nav-settings", title: t("nav.settings"), subtitle: t("topbar.nav.settings.subtitle"), type: "navigation", url: "/settings", icon: Settings },

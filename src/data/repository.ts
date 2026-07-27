@@ -1,4 +1,4 @@
-import { Center, Course, Group, Lesson, Payment, Room, Student, Test, TestSubmission, User } from "../types";
+import { Center, CenterNetwork, Course, Group, Lesson, Payment, Room, Student, Test, TestSubmission, User } from "../types";
 import {
   LogEntry,
   Moderator,
@@ -21,6 +21,15 @@ export interface Repository {
   updateCenter(centerId: string, patch: Partial<Omit<Center, "id">>): Promise<Center>;
   isSubdomainAvailable(subdomain: string): Promise<boolean>;
   getSubdomainCenterId(subdomain: string): Promise<string | null>;
+
+  // Networks (multi-branch)
+  getNetwork(networkId: string): Promise<CenterNetwork | null>;
+  getNetworkByOwner(ownerId: string): Promise<CenterNetwork | null>;
+  getNetworkByCenterId(centerId: string): Promise<CenterNetwork | null>;
+  createNetwork(input: { name: string; ownerId: string; headquartersCenterId: string }): Promise<CenterNetwork>;
+  createBranch(networkId: string, branchInput: { name: string; subdomain?: string; currency?: string; description?: string }): Promise<Center>;
+  removeBranchFromNetwork(networkId: string, branchCenterId: string): Promise<void>;
+  getNetworkBranches(networkId: string): Promise<Center[]>;
 
   // Users
   listUsers(centerId: string): Promise<User[]>;

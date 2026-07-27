@@ -1,4 +1,4 @@
-import { Center, Course, Group, Lesson, Payment, Room, Student, Test, TestSubmission, User } from "../types";
+import { Center, CenterNetwork, Course, Group, Lesson, Payment, Room, Student, Test, TestSubmission, User } from "../types";
 import { uid } from "../lib/utils";
 import { Repository } from "./repository";
 import { DEMO_CENTER, DEMO_COURSES, DEMO_GROUPS, DEMO_ROOMS, DEMO_STUDENTS, DEMO_USERS } from "./seed";
@@ -16,10 +16,21 @@ interface DB {
   payments: Payment[];
   tests?: Test[];
   testSubmissions?: TestSubmission[];
+  networks: CenterNetwork[];
 }
 
 function seedDB(): DB {
-  return { centers: [DEMO_CENTER], users: DEMO_USERS, rooms: DEMO_ROOMS, courses: DEMO_COURSES, groups: DEMO_GROUPS, students: DEMO_STUDENTS, lessons: [], payments: [] };
+  return { 
+    centers: [DEMO_CENTER], 
+    users: DEMO_USERS, 
+    rooms: DEMO_ROOMS, 
+    courses: DEMO_COURSES, 
+    groups: DEMO_GROUPS, 
+    students: DEMO_STUDENTS, 
+    lessons: [], 
+    payments: [],
+    networks: [],
+  };
 }
 
 function load(): DB {
@@ -59,9 +70,18 @@ export class MockRepository implements Repository {
     const db = load();
     const idx = db.centers.findIndex(c => c.id === centerId);
     if (idx === -1) throw new Error("Center not found");
-    db.centers[idx] = { ...db.centers[idx], ...patch };
+    db.centers[idx] = Object.assign({}, db.centers[idx], patch);
     save(db); return delay(db.centers[idx]);
   }
+
+  // Networks
+  async getNetwork(id: string) { return delay(load().networks.find(n => n.id === id) || null); }
+  async getNetworkByOwner(ownerId: string) { return delay(load().networks.find(n => n.ownerId === ownerId) || null); }
+  async getNetworkByCenterId(centerId: string) { return delay(load().networks.find(n => n.headquartersCenterId === centerId || n.branchIds.includes(centerId)) || null); }
+  async createNetwork(input: any): Promise<CenterNetwork> { throw new Error("Not implemented in mock"); }
+  async createBranch(networkId: string, branchInput: any): Promise<Center> { throw new Error("Not implemented in mock"); }
+  async removeBranchFromNetwork(networkId: string, branchCenterId: string): Promise<void> { throw new Error("Not implemented in mock"); }
+  async getNetworkBranches(networkId: string): Promise<Center[]> { return delay([]); }
 
   async listUsers(centerId: string) { return delay(load().users.filter(u => u.centerId === centerId)); }
   async getUserByLogin(login: string) {

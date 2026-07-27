@@ -1,8 +1,8 @@
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, query, where, limit, orderBy, writeBatch,
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, query, where, limit, orderBy, writeBatch, arrayUnion, arrayRemove,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Center, Course, Group, Lesson, Payment, Room, Student, Test, TestSubmission, User } from "../types";
+import { Center, CenterNetwork, Course, Group, Lesson, Payment, Room, Student, Test, TestSubmission, User } from "../types";
 import {
   LogEntry,
   Moderator,
@@ -71,6 +71,65 @@ export class FirestoreRepository implements Repository {
   async updateCenter(centerId: string, patch: Partial<Omit<Center, "id">>) {
     await updateDoc(doc(db, "centers", centerId), strip(patch as any));
     return (await this.getCenter(centerId))!;
+  }
+
+  // ── Networks (multi-branch) ────────────────────────────────────────────────
+  async getNetwork(networkId: string) {
+    const s = await getDoc(doc(db, "networks", networkId));
+    return s.exists() ? fromSnap<CenterNetwork>(s) : null;
+  }
+  async getNetworkByOwner(ownerId: string): Promise<CenterNetwork | null> {
+    const s = await getDocs(query(collection(db, "networks"), where("ownerId", "==", ownerId), limit(1)));
+    return s.empty ? null : fromSnap<CenterNetwork>(s.docs[0]);
+  }
+  async getNetworkByCenterId(centerId: string): Promise<CenterNetwork | null> {
+    // HQ check
+    const hqSnap = await getDocs(query(collection(db, "networks"), where("headquartersCenterId", "==", centerId), limit(1)));
+    if (!hqSnap.empty) return fromSnap<CenterNetwork>(hqSnap.docs[0]);
+    // Branch check
+    const brSnap = await getDocs(query(collection(db, "networks"), where("branchIds", "array-contains", centerId), limit(1)));
+    return brSnap.empty ? null : fromSnap<CenterNetwork>(brSnap.docs[0]);
+  }
+  async createNetwork(input: { name: string; ownerId: string; headquartersCenterId: string }): Promise<CenterNetwork> {
+    const id = genId("net");
+    const network: CenterNetwork = {
+      id,
+      name: input.name,
+      ownerId: input.ownerId,
+      headquartersCenterId: input.headquartersCenterId,
+      branchIds: [],
+      createdAt: new Date().toISOString(),
+    };
+    const batch = writeBatch(db);
+    batch.set(doc(db, "networks", id), network);
+    // Mark HQ center
+    batch.update(doc(db, "centers", input.headquartersCenterId), { networkId: id, isHeadquarters: true });
+    await batch.commit();
+    return network;
+  }
+  async createBranch(networkId: string, branchInput: { name: string; subdomain?: string; currency?: string; description?: string }): Promise<Center> {
+    const network = await this.getNetwork(networkId);
+    if (!network) throw new Error("Network not found");
+    // Create the branch center
+    const branch = await this.createCenter({ ...branchInput, currency: branchInput.currency ?? "USD" });
+    // Link to network
+    const batch = writeBatch(db);
+    batch.update(doc(db, "centers", branch.id), { networkId, isHeadquarters: false });
+    batch.update(doc(db, "networks", networkId), { branchIds: arrayUnion(branch.id) });
+    await batch.commit();
+    return { ...branch, networkId, isHeadquarters: false };
+  }
+  async removeBranchFromNetwork(networkId: string, branchCenterId: string): Promise<void> {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "networks", networkId), { branchIds: arrayRemove(branchCenterId) });
+    batch.update(doc(db, "centers", branchCenterId), { networkId: null, isHeadquarters: false });
+    await batch.commit();
+  }
+  async getNetworkBranches(networkId: string): Promise<Center[]> {
+    const network = await this.getNetwork(networkId);
+    if (!network || network.branchIds.length === 0) return [];
+    const snaps = await Promise.all(network.branchIds.map(id => getDoc(doc(db, "centers", id))));
+    return snaps.filter(s => s.exists()).map(s => fromSnap<Center>(s));
   }
 
   // ── Users ─────────────────────────────────────────────────────────────────

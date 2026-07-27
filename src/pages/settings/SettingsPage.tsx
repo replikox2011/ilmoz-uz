@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Building2, Mail, Phone, Shield, LogOut } from "lucide-react";
+import { Building2, Mail, Phone, Shield, LogOut, GitBranch, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +19,7 @@ import { useI18n } from "../../i18n/I18nContext";
 const CAN_EDIT_CENTER: string[] = ["owner", "director"];
 
 export function SettingsPage() {
-  const { user, center, logout, setCenter } = useAuth();
+  const { user, center, network, logout, setCenter } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [savingCenter, setSavingCenter] = React.useState(false);
@@ -134,6 +134,30 @@ export function SettingsPage() {
           </div>
         </div>
       </GlassCard>
+
+      {/* Network settings — owner only */}
+      {user.role === "owner" && (
+        <GlassCard className="p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-6 w-6 rounded-lg bg-brand-500/10 flex items-center justify-center">
+                  <GitBranch className="h-3.5 w-3.5 text-brand-400" />
+                </div>
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-white">{t("nav.network")}</h2>
+              </div>
+              <p className="text-sm text-white/45">
+                {network 
+                  ? `${network.branchIds.length + 1} ta markazni bitta joydan boshqarish.`
+                  : "Yangi filiallar qo'shish va tarmog'ingizni kengaytirish."}
+              </p>
+            </div>
+            <Button onClick={() => navigate("/network")} variant="outline" className="shrink-0">
+              {network ? "Tarmoq paneli" : "Tarmoq yaratish"} <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Login page customization — directors & owners only (branding = center identity) */}
       {canEditCenter && <LoginPageCustomizer />}
