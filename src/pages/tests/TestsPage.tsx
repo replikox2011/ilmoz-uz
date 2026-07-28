@@ -1,12 +1,12 @@
 import * as React from "react";
 import {
   ClipboardList, Sparkles, Trash2, Play, X, CheckCircle2,
-  Globe, ChevronRight, Users, BarChart3, Loader2,
+  Globe, ChevronRight, Users, BarChart3, Loader2, Pencil, Plus, Save, Wand2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
 import { firestoreRepository as repo } from "../../data/firestoreRepository";
-import { generateTestWithWebSearch } from "../../components/copilot/generateTest";
+import { generateTestWithWebSearch, editTestWithAI } from "../../components/copilot/generateTest";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Button } from "../../components/ui/Button";
@@ -18,7 +18,7 @@ import { Stagger, FadeItem } from "../../components/motion/Motion";
 import { Test, TestQuestion, TestSubmission } from "../../types";
 import { isStaff } from "../../lib/access";
 import { useI18n } from "../../i18n/I18nContext";
-import { cn } from "../../lib/utils";
+import { cn, uid } from "../../lib/utils";
 
 // ── scoring ──────────────────────────────────────────────────────────────────
 function maxScoreOf(test: Test): number {
@@ -65,6 +65,7 @@ function TeacherTests({ centerId, userId, data, t }: {
   t: (k: string) => string;
 }) {
   const [showGenerate, setShowGenerate] = React.useState(false);
+  const [editingTest, setEditingTest] = React.useState<Test | null | "new">(null);
   const [activating, setActivating] = React.useState<Test | null>(null);
   const [viewing, setViewing] = React.useState<Test | null>(null);
 
@@ -88,9 +89,14 @@ function TeacherTests({ centerId, userId, data, t }: {
         title={t("tests.title")}
         subtitle={t("tests.subtitle")}
         actions={
-          <Button onClick={() => setShowGenerate(true)}>
-            <Sparkles className="h-4 w-4" /> {t("tests.generate")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setEditingTest("new")}>
+              <Plus className="h-4 w-4" /> {t("tests.createManual")}
+            </Button>
+            <Button onClick={() => setShowGenerate(true)}>
+              <Sparkles className="h-4 w-4" /> {t("tests.generate")}
+            </Button>
+          </div>
         }
       />
 
@@ -103,6 +109,14 @@ function TeacherTests({ centerId, userId, data, t }: {
           <ClipboardList className="mx-auto h-10 w-10 text-white/20" />
           <p className="mt-3 text-sm text-white/50">{t("tests.empty")}</p>
           <p className="mt-1 text-xs text-white/30">{t("tests.emptyHint")}</p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditingTest("new")}>
+              <Plus className="h-4 w-4" /> {t("tests.createManual")}
+            </Button>
+            <Button size="sm" onClick={() => setShowGenerate(true)}>
+              <Sparkles className="h-4 w-4" /> {t("tests.generate")}
+            </Button>
+          </div>
         </GlassCard>
       ) : (
         <Stagger className="space-y-3">
@@ -129,6 +143,9 @@ function TeacherTests({ centerId, userId, data, t }: {
                       </p>
                     </button>
                     <div className="flex items-center gap-1.5">
+                      <Button size="icon" variant="ghost" onClick={() => setEditingTest(test)} title="Тестни таҳрирлаш">
+                        <Pencil className="h-4 w-4 text-white/50 hover:text-white" />
+                      </Button>
                       {test.status === "draft" && (
                         <Button size="sm" onClick={() => setActivating(test)}>
                           <Play className="h-3.5 w-3.5" /> {t("tests.activate")}
@@ -164,6 +181,15 @@ function TeacherTests({ centerId, userId, data, t }: {
         t={t}
       />
 
+      <EditTestModal
+        open={editingTest !== null}
+        test={editingTest === "new" ? null : editingTest}
+        onClose={() => setEditingTest(null)}
+        centerId={centerId}
+        userId={userId}
+        t={t}
+      />
+
       <ActivateModal
         test={activating}
         onClose={() => setActivating(null)}
@@ -180,6 +206,376 @@ function TeacherTests({ centerId, userId, data, t }: {
         t={t}
       />
     </div>
+  );
+}
+
+// ── edit/create manual & AI test modal ───────────────────────────────────────
+function EditTestModal({
+  open,
+  test,
+  onClose,
+  centerId,
+  userId,
+  t,
+}: {
+  open: boolean;
+  test: Test | null;
+  onClose: () => void;
+  centerId: string;
+  userId: string;
+  t: (k: string) => string;
+}) {
+  const [title, setTitle] = React.useState("");
+  const [topic, setTopic] = React.useState("");
+  const [questions, setQuestions] = React.useState<TestQuestion[]>([]);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // AI edit states
+  const [aiPrompt, setAiPrompt] = React.useState("");
+  const [aiLoading, setAiLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (test) {
+      setTitle(test.title);
+      setTopic(test.topic || "");
+      setQuestions(test.questions || []);
+    } else {
+      setTitle("");
+      setTopic("");
+      setQuestions([
+        {
+          id: uid("q"),
+          type: "mcq",
+          prompt: "",
+          options: ["A", "B", "C", "D"],
+          correctAnswer: 0,
+          points: 1,
+        },
+      ]);
+    }
+    setError(null);
+    setAiPrompt("");
+  }, [test, open]);
+
+  const handleAddQuestion = () => {
+    setQuestions(prev => [
+      ...prev,
+      {
+        id: uid("q"),
+        type: "mcq",
+        prompt: "",
+        options: ["A", "B", "C", "D"],
+        correctAnswer: 0,
+        points: 1,
+      },
+    ]);
+  };
+
+  const handleRemoveQuestion = (index: number) => {
+    setQuestions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleQuestionChange = (index: number, fields: Partial<TestQuestion>) => {
+    setQuestions(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...fields };
+      return next;
+    });
+  };
+
+  const handleOptionChange = (qIndex: number, optIndex: number, val: string) => {
+    setQuestions(prev => {
+      const next = [...prev];
+      const q = { ...next[qIndex] };
+      const opts = [...(q.options || [])];
+      opts[optIndex] = val;
+      q.options = opts;
+      next[qIndex] = q;
+      return next;
+    });
+  };
+
+  const handleAddOption = (qIndex: number) => {
+    setQuestions(prev => {
+      const next = [...prev];
+      const q = { ...next[qIndex] };
+      const opts = [...(q.options || []), `Option ${(q.options?.length || 0) + 1}`];
+      q.options = opts;
+      next[qIndex] = q;
+      return next;
+    });
+  };
+
+  const handleRemoveOption = (qIndex: number, optIndex: number) => {
+    setQuestions(prev => {
+      const next = [...prev];
+      const q = { ...next[qIndex] };
+      const opts = (q.options || []).filter((_, i) => i !== optIndex);
+      q.options = opts;
+      if (typeof q.correctAnswer === "number" && q.correctAnswer >= opts.length) {
+        q.correctAnswer = Math.max(0, opts.length - 1);
+      }
+      next[qIndex] = q;
+      return next;
+    });
+  };
+
+  const handleApplyAI = async () => {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    setError(null);
+    try {
+      const updated = await editTestWithAI(questions, aiPrompt.trim());
+      setQuestions(updated);
+      setAiPrompt("");
+    } catch (err: any) {
+      setError(err?.message ?? "Error.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      setError(t("tests.fieldTitleLabel"));
+      return;
+    }
+    if (questions.length === 0) {
+      setError("Please add at least one question");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      if (test) {
+        await repo.updateTest(centerId, test.id, {
+          title: title.trim(),
+          topic: topic.trim() || title.trim(),
+          questions,
+        });
+      } else {
+        await repo.createTest({
+          centerId,
+          title: title.trim(),
+          topic: topic.trim() || title.trim(),
+          createdBy: userId,
+          questions,
+          status: "draft",
+          createdAt: new Date().toISOString(),
+        });
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err?.message ?? "Error saving test");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={test ? t("tests.editTest") : t("tests.createManual")}
+      description={t("tests.editDesc")}
+      className="max-w-3xl"
+    >
+      <form onSubmit={handleSave} className="space-y-4">
+        {/* Basic fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-xs text-white/50 font-medium">{t("tests.fieldTitleLabel")}</label>
+            <Input
+              placeholder={t("tests.fieldTitle")}
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-white/50 font-medium">{t("tests.fieldPromptLabel")}</label>
+            <Input
+              placeholder={t("tests.fieldTopic")}
+              value={topic}
+              onChange={e => setTopic(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* AI Refinement Box */}
+        <div className="rounded-2xl border border-brand-500/30 bg-brand-500/10 p-3.5 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-brand-300">
+            <Sparkles className="h-4 w-4 text-brand-400" />
+            <span>{t("tests.aiEditTitle")}</span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder={t("tests.aiEditPlaceholder")}
+              className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-brand-400/50"
+              value={aiPrompt}
+              onChange={e => setAiPrompt(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleApplyAI();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleApplyAI}
+              disabled={!aiPrompt.trim() || aiLoading}
+            >
+              {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              {t("tests.aiApply")}
+            </Button>
+          </div>
+        </div>
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
+
+        {/* Questions list */}
+        <div className="max-h-[50vh] overflow-y-auto space-y-4 pr-1">
+          {questions.map((q, qIndex) => (
+            <div key={q.id || qIndex} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
+                <span className="text-xs font-semibold text-brand-400">
+                  {t("tests.questionIndex")} {qIndex + 1}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 text-xs text-white/50">
+                    <span>{t("tests.points")}:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={q.points || 1}
+                      onChange={e => handleQuestionChange(qIndex, { points: Number(e.target.value) || 1 })}
+                      className="w-12 rounded-lg border border-white/10 bg-white/[0.05] px-1.5 py-0.5 text-center text-xs text-white outline-none"
+                    />
+                  </div>
+                  <select
+                    value={q.type}
+                    onChange={e => handleQuestionChange(qIndex, {
+                      type: e.target.value as "mcq" | "short",
+                      options: e.target.value === "mcq" ? (q.options?.length ? q.options : ["A", "B", "C", "D"]) : undefined,
+                      correctAnswer: e.target.value === "mcq" ? 0 : "",
+                    })}
+                    className="rounded-lg border border-white/10 bg-[#0d0f17] px-2 py-0.5 text-xs text-white outline-none"
+                  >
+                    <option value="mcq">{t("tests.typeMcq")}</option>
+                    <option value="short">{t("tests.typeShort")}</option>
+                  </select>
+                  {questions.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-white/30 hover:text-red-400"
+                      onClick={() => handleRemoveQuestion(qIndex)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Question prompt */}
+              <div>
+                <textarea
+                  rows={2}
+                  placeholder={t("tests.fieldPromptPlaceholder")}
+                  value={q.prompt}
+                  onChange={e => handleQuestionChange(qIndex, { prompt: e.target.value })}
+                  className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-xs text-white placeholder:text-white/30 outline-none focus:border-brand-400/50"
+                  required
+                />
+              </div>
+
+              {/* MCQ Options */}
+              {q.type === "mcq" && (
+                <div className="space-y-1.5 pl-2">
+                  <p className="text-[11px] font-medium text-white/40">{t("tests.optionsTitle")}</p>
+                  {(q.options || []).map((opt, optIndex) => (
+                    <div key={optIndex} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`correct-${q.id || qIndex}`}
+                        checked={Number(q.correctAnswer) === optIndex}
+                        onChange={() => handleQuestionChange(qIndex, { correctAnswer: optIndex })}
+                        className="h-4 w-4 accent-brand-500 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={e => handleOptionChange(qIndex, optIndex, e.target.value)}
+                        className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 outline-none focus:border-brand-400/50"
+                        placeholder={`Option ${optIndex + 1}`}
+                        required
+                      />
+                      {(q.options?.length || 0) > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOption(qIndex, optIndex)}
+                          className="text-white/20 hover:text-red-400 p-1"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => handleAddOption(qIndex)}
+                    className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-brand-400 hover:underline"
+                  >
+                    <Plus className="h-3 w-3" /> {t("tests.addOption")}
+                  </button>
+                </div>
+              )}
+
+              {/* Short Answer */}
+              {q.type === "short" && (
+                <div className="pl-2">
+                  <label className="mb-1 block text-[11px] font-medium text-white/40">{t("tests.expectedAnswer")}</label>
+                  <input
+                    type="text"
+                    value={String(q.correctAnswer || "")}
+                    onChange={e => handleQuestionChange(qIndex, { correctAnswer: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 outline-none focus:border-brand-400/50"
+                    placeholder={t("tests.shortAnswerPlaceholder")}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full py-2 text-xs"
+            onClick={handleAddQuestion}
+          >
+            <Plus className="h-3.5 w-3.5" /> {t("tests.addQuestion")}
+          </Button>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.08]">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="submit" loading={saving}>
+            <Save className="h-4 w-4" /> {test ? t("tests.save") : t("tests.create")}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -230,17 +626,25 @@ function GenerateModal({ open, onClose, centerId, userId, t }: {
   return (
     <Modal open={open} onClose={() => !generating && onClose()} title={t("tests.generateTitle")} description={t("tests.generateDesc")}>
       <form onSubmit={submit} className="space-y-3">
-        <Input
-          placeholder={t("tests.fieldTitle")}
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-        <Input
-          placeholder={t("tests.fieldTopic")}
-          value={topic}
-          onChange={e => setTopic(e.target.value)}
-          required
-        />
+        <div>
+          <label className="mb-1 block text-xs text-white/40 font-medium">{t("tests.aiGenerateTitleLabel")}</label>
+          <Input
+            placeholder={t("tests.fieldTitle")}
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-white/40 font-medium">{t("tests.aiGeneratePromptLabel")}</label>
+          <textarea
+            rows={3}
+            placeholder={t("tests.aiGeneratePromptPlaceholder")}
+            className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-xs text-white placeholder:text-white/30 outline-none focus:border-brand-400/50"
+            value={topic}
+            onChange={e => setTopic(e.target.value)}
+            required
+          />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-xs text-white/40">{t("tests.fieldCount")}</label>
