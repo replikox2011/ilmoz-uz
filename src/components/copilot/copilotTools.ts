@@ -149,6 +149,22 @@ export const COPILOT_TOOLS = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "create_course",
+      description: "Create a new course in the center",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Course name e.g. 'English Upper-Intermediate'" },
+          color: { type: "string", description: "Optional course color code e.g. '#3b6bff' or '#10b981'" },
+          description: { type: "string", description: "Optional description of the course content" }
+        },
+        required: ["name"] as string[],
+      },
+    },
+  },
 ];
 
 export async function executeTool(
@@ -238,6 +254,14 @@ export async function executeTool(
         centerId,
         name: String(args.name),
         capacity: Number(args.capacity),
+      });
+
+    case "create_course":
+      return await repo.createCourse({
+        centerId,
+        name: String(args.name),
+        color: String(args.color ?? "#3b6bff"),
+        description: args.description ? String(args.description) : undefined,
       });
 
     case "create_group":

@@ -8,7 +8,7 @@ const MAX_STORED = 100;
 const MAX_TOOL_ROUNDS = 6;
 
 // ── Model definitions ─────────────────────────────────────────────────────────
-export type CopilotModel = "gpt-4o" | "groq-fast" | "groq-pro" | "openai-gpt-oss-free";
+export type CopilotModel = "openai-gpt-oss-free";
 
 export interface ModelConfig {
   id: CopilotModel;
@@ -18,9 +18,6 @@ export interface ModelConfig {
 }
 
 export const COPILOT_MODELS: ModelConfig[] = [
-  { id: "groq-fast", label: "Llama 3.1 8B", sublabel: "Быстрый",    apiModel: "llama-3.1-8b-instant"     },
-  { id: "groq-pro",  label: "Llama 3.3 70B", sublabel: "Расширенный", apiModel: "llama-3.3-70b-versatile" },
-  { id: "gpt-4o",    label: "GPT-4o",         sublabel: "OpenRouter",  apiModel: "openai/gpt-4o"            },
   { id: "openai-gpt-oss-free", label: "GPT OSS 20B (Free)", sublabel: "OpenRouter", apiModel: "openai/gpt-oss-20b:free" },
 ];
 
@@ -31,7 +28,7 @@ export function loadSavedModel(): CopilotModel {
     const v = localStorage.getItem(MODEL_STORAGE_KEY) as CopilotModel | null;
     if (v && COPILOT_MODELS.some(m => m.id === v)) return v;
   } catch { /* ignore */ }
-  return "groq-fast";
+  return "openai-gpt-oss-free";
 }
 
 export function saveModel(model: CopilotModel) {
@@ -84,7 +81,7 @@ async function streamOnce(
   signal: AbortSignal,
 ): Promise<{ text: string; toolCalls: Array<{ id: string; name: string; arguments: string }> }> {
   const cfg = COPILOT_MODELS.find(m => m.id === model) ?? COPILOT_MODELS[0];
-  const isGroq = model === "groq-fast" || model === "groq-pro";
+  const isGroq = (model as string) === "groq-fast" || (model as string) === "groq-pro";
 
   const url = isGroq ? GROQ_URL : OPENROUTER_URL;
   const apiKey = isGroq

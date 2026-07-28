@@ -191,7 +191,7 @@ export function CopilotPage() {
 }
 
 // ── Model picker ──────────────────────────────────────────────────────────────
-const MODEL_ICONS: Record<CopilotModel, React.ReactNode> = {
+const MODEL_ICONS: Record<string, React.ReactNode> = {
   "groq-fast": <Zap className="h-3.5 w-3.5" />,
   "groq-pro": <Brain className="h-3.5 w-3.5" />,
   "gpt-4o": <Bot className="h-3.5 w-3.5" />,

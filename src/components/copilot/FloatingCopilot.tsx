@@ -221,7 +221,7 @@ export function FloatingCopilot() {
 }
 
 // ── Mini model picker (icon-only with tooltip dropdown) ───────────────────────
-const MINI_ICONS: Record<CopilotModel, React.ReactNode> = {
+const MINI_ICONS: Record<string, React.ReactNode> = {
   "groq-fast": <Zap className="h-3.5 w-3.5" />,
   "groq-pro":  <Brain className="h-3.5 w-3.5" />,
   "gpt-4o":    <Bot className="h-3.5 w-3.5" />,
