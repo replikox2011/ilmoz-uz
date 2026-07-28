@@ -80,6 +80,7 @@ export class MockRepository implements Repository {
   async getNetworkByCenterId(centerId: string) { return delay(load().networks.find(n => n.headquartersCenterId === centerId || n.branchIds.includes(centerId)) || null); }
   async createNetwork(input: any): Promise<CenterNetwork> { throw new Error("Not implemented in mock"); }
   async createBranch(networkId: string, branchInput: any): Promise<Center> { throw new Error("Not implemented in mock"); }
+  async linkBranchToNetwork(networkId: string, subdomain: string): Promise<Center> { throw new Error("Not implemented in mock"); }
   async removeBranchFromNetwork(networkId: string, branchCenterId: string): Promise<void> { throw new Error("Not implemented in mock"); }
   async getNetworkBranches(networkId: string): Promise<Center[]> { return delay([]); }
 

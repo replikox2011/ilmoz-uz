@@ -119,6 +119,23 @@ export class FirestoreRepository implements Repository {
     await batch.commit();
     return { ...branch, networkId, isHeadquarters: false };
   }
+  async linkBranchToNetwork(networkId: string, subdomain: string): Promise<Center> {
+    const network = await this.getNetwork(networkId);
+    if (!network) throw new Error("Tarmoq topilmadi");
+
+    const centerId = await this.getSubdomainCenterId(subdomain);
+    if (!centerId) throw new Error("Bunday subdomain topilmadi");
+
+    const branch = await this.getCenter(centerId);
+    if (!branch) throw new Error("Markaz topilmadi");
+    if (branch.networkId) throw new Error("Bu filial allaqachon tarmoqqa ulangan");
+
+    const batch = writeBatch(db);
+    batch.update(doc(db, "centers", branch.id), { networkId, isHeadquarters: false });
+    batch.update(doc(db, "networks", networkId), { branchIds: arrayUnion(branch.id) });
+    await batch.commit();
+    return { ...branch, networkId, isHeadquarters: false };
+  }
   async removeBranchFromNetwork(networkId: string, branchCenterId: string): Promise<void> {
     const batch = writeBatch(db);
     batch.update(doc(db, "networks", networkId), { branchIds: arrayRemove(branchCenterId) });

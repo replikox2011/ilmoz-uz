@@ -28,6 +28,7 @@ export interface Repository {
   getNetworkByCenterId(centerId: string): Promise<CenterNetwork | null>;
   createNetwork(input: { name: string; ownerId: string; headquartersCenterId: string }): Promise<CenterNetwork>;
   createBranch(networkId: string, branchInput: { name: string; subdomain?: string; currency?: string; description?: string }): Promise<Center>;
+  linkBranchToNetwork(networkId: string, subdomain: string): Promise<Center>;
   removeBranchFromNetwork(networkId: string, branchCenterId: string): Promise<void>;
   getNetworkBranches(networkId: string): Promise<Center[]>;
 
