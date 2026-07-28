@@ -200,10 +200,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isSameNetwork
         });
 
-        if (!isSameNetwork) {
+        if (!isSameNetwork && profile.role !== "owner") {
           throw new Error(`wrong-center:${profile.centerId}`);
-        } else {
-          // If in the same network, set activeCenter to the branch subdomain center
+        } else if (subCenter) {
+          // If in the same network or the user is the owner, set activeCenter to the branch subdomain center
           activeCenter = subCenter;
         }
       }
