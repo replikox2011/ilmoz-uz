@@ -20,6 +20,8 @@ import {
   Users,
   Zap,
   Shield,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import { Logo } from '../../components/ui/Logo';
@@ -30,7 +32,7 @@ import { InteractiveHoverButton } from '../../components/ui/InteractiveHoverButt
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const MAX = 'mx-auto w-full max-w-[1440px] px-6 lg:px-10';
+const MAX = 'mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10';
 
 // ── Orbital System ──────────────────────────────────────────────
 
@@ -325,7 +327,7 @@ function LiquidButton({
       onClick={onClick}
       className={cn(
         'group relative overflow-hidden rounded-full bg-brand-500 font-medium tracking-wide text-white shadow-glow-sm cursor-pointer',
-        large ? 'px-10 py-4 text-base' : 'px-6 py-2.5 text-sm'
+        large ? 'w-full sm:w-auto px-8 sm:px-10 py-3.5 sm:py-4 text-sm sm:text-base' : 'px-5 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm'
       )}
     >
       <span className="relative z-10">{children}</span>
@@ -358,7 +360,7 @@ function FeatureCard({
 }) {
   return (
     <MagneticCard className="h-full">
-      <div className="feature-card bento-card group p-10 h-full">
+      <div className="feature-card bento-card group p-6 sm:p-10 h-full">
         <div className="noise-overlay" />
         <div className="relative z-10">
         {/* Background orb */}
@@ -465,10 +467,10 @@ function PriceCard({
   badge?: string;
 }) {
   return (
-    <MagneticCard className="price-card h-full">
+    <MagneticCard className="price-card h-full shrink-0 w-[85vw] max-w-[340px] snap-center md:w-auto md:shrink md:max-w-none">
       <div
         className={cn(
-          'bento-card relative h-full p-10',
+          'bento-card relative h-full p-6 sm:p-10',
           highlighted &&
             'border-brand-500/40 bg-brand-500/[0.03] shadow-glow-sm md:scale-105',
           highlighted && 'glow-ring glow-ring-visible'
@@ -760,6 +762,67 @@ function AnimatedCounter({
   return <span ref={ref}>{prefix}0{suffix}</span>;
 }
 
+// ── Language Dropdown ──────────────────────────────────────────
+
+function LanguageDropdown({
+  languages,
+  language,
+  setLanguage,
+}: {
+  languages: { code: string; short: string; label: string }[];
+  language: string;
+  setLanguage: (code: any) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const currentLang = languages.find(l => l.code === language);
+
+  return (
+    <div ref={containerRef} className="relative z-50">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition duration-300 cursor-pointer"
+      >
+        <Globe className="h-3.5 w-3.5" />
+        <span className="uppercase">{currentLang?.short ?? language}</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-28 rounded-2xl border border-white/[0.08] bg-[#0d0f17]/95 p-1.5 shadow-2xl backdrop-blur-xl">
+          {languages.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => {
+                setLanguage(l.code);
+                setOpen(false);
+              }}
+              className={cn(
+                "w-full rounded-xl px-3 py-2 text-left text-xs transition duration-300 cursor-pointer",
+                language === l.code
+                  ? "bg-brand-500 text-white font-medium"
+                  : "text-white/60 hover:text-white hover:bg-white/[0.05]"
+              )}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Nav Links ───────────────────────────────────────────────────
 
 const NAV_LINKS: { key: string; href: string }[] = [
@@ -778,6 +841,7 @@ export function LandingPage() {
   const navigate = useNavigate();
   const goSignIn = () => navigate('/login');
   const goStart = () => navigate('/register');
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
     const html = document.documentElement;
@@ -894,7 +958,7 @@ export function LandingPage() {
         }
 
         // ── Features stagger ────────────────────────────────
-        if (featuresRef.current) {
+        if (featuresRef.current && isDesktop) {
           gsap.from(featuresRef.current.querySelectorAll('.section-heading'), {
             autoAlpha: 0,
             y: 50,
@@ -944,7 +1008,7 @@ export function LandingPage() {
             .from('.showcase-desc', { autoAlpha: 0, y: 30 }, '<0.15')
             .from('.showcase-point', { autoAlpha: 0, x: -20, stagger: 0.1 }, '<0.1')
             .from('.showcase-chart', { autoAlpha: 0, scale: 0.9, x: 60 }, '<0.1');
-        } else if (showcaseRef.current) {
+        } else if (showcaseRef.current && isDesktop) {
           // Mobile: simple reveal
           gsap.from(showcaseRef.current.querySelectorAll('.showcase-overline, .showcase-title, .showcase-desc, .showcase-point, .showcase-chart'), {
             autoAlpha: 0,
@@ -958,15 +1022,17 @@ export function LandingPage() {
 
         // ── AI Copilot section ──────────────────────────────
         if (copilotRef.current) {
-          gsap.from(copilotRef.current.querySelectorAll('.section-heading'), {
-            autoAlpha: 0,
-            y: 50,
-            filter: 'blur(10px)',
-            duration: dur ?? 0.8,
-            stagger: 0.1,
-            ease: 'power3.out',
-            scrollTrigger: { trigger: copilotRef.current, start: 'top 80%', once: true },
-          });
+          if (isDesktop) {
+            gsap.from(copilotRef.current.querySelectorAll('.section-heading'), {
+              autoAlpha: 0,
+              y: 50,
+              filter: 'blur(10px)',
+              duration: dur ?? 0.8,
+              stagger: 0.1,
+              ease: 'power3.out',
+              scrollTrigger: { trigger: copilotRef.current, start: 'top 80%', once: true },
+            });
+          }
 
           // Floating chat mock
           if (chatFloatRef.current && !reduceMotion) {
@@ -993,7 +1059,7 @@ export function LandingPage() {
         }
 
         // ── Stats stagger ──────────────────────────────────
-        if (statsRef.current) {
+        if (statsRef.current && isDesktop) {
           ScrollTrigger.batch('.stat-card', {
             start: 'top 85%',
             onEnter: (elements) => {
@@ -1026,7 +1092,7 @@ export function LandingPage() {
         }
 
         // ── Pricing stagger ─────────────────────────────────
-        if (pricingRef.current) {
+        if (pricingRef.current && isDesktop) {
           gsap.from(pricingRef.current.querySelectorAll('.section-heading'), {
             autoAlpha: 0,
             y: 50,
@@ -1084,7 +1150,7 @@ export function LandingPage() {
         }
 
         // ── Final CTA ──────────────────────────────────────
-        if (ctaRef.current) {
+        if (ctaRef.current && isDesktop) {
           const ctaBox = ctaRef.current.querySelector('.cta-box');
           if (ctaBox) {
             gsap.from(ctaBox, {
@@ -1113,7 +1179,7 @@ export function LandingPage() {
         }
 
         // ── Footer ─────────────────────────────────────────
-        if (footerRef.current) {
+        if (footerRef.current && isDesktop) {
           gsap.from(footerRef.current.querySelectorAll('.footer-col'), {
             autoAlpha: 0,
             y: 30,
@@ -1150,12 +1216,11 @@ export function LandingPage() {
       {/* Scroll Progress */}
       <div ref={progressRef} className="scroll-progress-gsap" />
 
-      {/* ── Nav ─────────────────────────────────────────────── */}
-      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.04] bg-bg/30 backdrop-blur-3xl">
-        <div className={cn(MAX, 'flex h-20 items-center justify-between')}>
-          <div className="flex items-center gap-10">
-            <Logo size={30} />
-            <div className="hidden gap-8 md:flex">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.04] bg-bg/40 backdrop-blur-3xl">
+        <div className={cn(MAX, 'flex h-16 sm:h-20 items-center justify-between')}>
+          <div className="flex items-center gap-6 lg:gap-10">
+            <Logo size={28} />
+            <div className="hidden gap-6 lg:gap-8 md:flex">
               {NAV_LINKS.map((l) => (
                 <a
                   key={l.key}
@@ -1168,28 +1233,14 @@ export function LandingPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Language switcher */}
-            <div className="mr-2 flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1">
-              {languages.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => setLanguage(l.code)}
-                  className={cn(
-                    'rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wider transition-all duration-300 cursor-pointer',
-                    language === l.code
-                      ? 'bg-brand-500 text-white shadow-[0_0_12px_rgba(59,107,255,0.45)]'
-                      : 'text-white/40 hover:text-white/80'
-                  )}
-                >
-                  {l.short}
-                </button>
-              ))}
-            </div>
+
+          {/* Desktop Right Actions */}
+          <div className="hidden items-center gap-4 md:flex">
+            <LanguageDropdown languages={languages} language={language} setLanguage={setLanguage} />
 
             <button
               onClick={goSignIn}
-              className="rounded-full px-5 py-2.5 text-sm font-light tracking-wide text-white/70 transition-all duration-300 hover:bg-white/[0.04] hover:text-white cursor-pointer"
+              className="rounded-full px-4 py-2 text-sm font-light tracking-wide text-white/70 transition-all duration-300 hover:bg-white/[0.04] hover:text-white cursor-pointer"
             >
               {t('landing.nav.signIn')}
             </button>
@@ -1197,7 +1248,61 @@ export function LandingPage() {
               {t('landing.nav.getStarted')}
             </LiquidButton>
           </div>
+
+          {/* Mobile Right Controls */}
+          <div className="flex items-center gap-2 md:hidden">
+            <LanguageDropdown languages={languages} language={language} setLanguage={setLanguage} />
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.06] text-white/80 transition hover:text-white cursor-pointer"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="border-t border-white/[0.08] bg-[#05060a]/95 px-6 py-6 backdrop-blur-2xl md:hidden shadow-2xl animate-fadeIn">
+            <div className="flex flex-col gap-4">
+              {NAV_LINKS.map((l) => (
+                <a
+                  key={l.key}
+                  href={l.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-light text-white/70 transition hover:text-white"
+                >
+                  {t(l.key)}
+                </a>
+              ))}
+
+              <div className="my-2 h-px bg-white/[0.08]" />
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    goStart();
+                  }}
+                  className="w-full rounded-full bg-brand-500 py-3 text-center text-sm font-medium text-white shadow-glow-sm cursor-pointer"
+                >
+                  {t('landing.nav.getStarted')}
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    goSignIn();
+                  }}
+                  className="w-full rounded-full border border-white/15 py-3 text-center text-sm font-light text-white/90 transition hover:bg-white/[0.05]"
+                >
+                  {t('landing.nav.signIn')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className="relative">
@@ -1222,9 +1327,9 @@ export function LandingPage() {
         <MorphBlob className="left-[40%] top-[80%] parallax-slow" color="rgba(34, 211, 238, 0.05)" size={350} />
 
         {/* ── Hero ──────────────────────────────────────────── */}
-        <section ref={heroRef} className={cn(MAX, 'relative pb-28 pt-40 text-center md:pt-48')}>
+        <section ref={heroRef} className={cn(MAX, 'relative pb-16 pt-28 sm:pb-28 sm:pt-40 md:pt-48 text-center')}>
           <div
-            className="absolute inset-x-0 top-0 z-0 h-[520px] overflow-hidden"
+            className="absolute inset-x-0 top-0 z-0 h-[420px] sm:h-[520px] overflow-hidden"
             style={{
               maskImage:
                 'linear-gradient(to bottom, transparent, black 20%, black 48%, transparent 82%)',
@@ -1249,21 +1354,21 @@ export function LandingPage() {
             />
           </div>
           <div
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[620px]"
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[500px] sm:h-[620px]"
             style={{
               background:
                 'radial-gradient(ellipse 55% 60% at 50% 35%, rgba(5,6,10,0.92), rgba(5,6,10,0.6) 50%, transparent 78%)',
             }}
           />
           <div className="relative z-10">
-            <div className="hero-badge mb-9 inline-flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.045] px-4 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_10px_35px_rgba(0,0,0,.16)] backdrop-blur-xl">
+            <div className="hero-badge mb-6 sm:mb-9 inline-flex items-center gap-2 sm:gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.045] px-3.5 sm:px-4 py-1.5 sm:py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.12),0_10px_35px_rgba(0,0,0,.16)] backdrop-blur-xl">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-400 shadow-[0_0_8px_rgba(59,107,255,0.6)]" />
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-brand-300/80">
+              <span className="text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] text-brand-300/80">
                 {t('landing.hero.badge')}
               </span>
             </div>
 
-            <h1 className="mx-auto max-w-6xl text-[3.1rem] font-medium leading-[0.96] tracking-[-0.065em] sm:text-7xl md:text-[6.5rem]">
+            <h1 className="mx-auto max-w-6xl text-3xl font-medium leading-[1.05] tracking-[-0.05em] sm:text-5xl md:text-7xl lg:text-[6.5rem]">
               <span className="hero-title-line text-gradient">{t('landing.hero.titleA')}</span>
               <span className="hero-title-line block pt-0.5 font-semibold md:pt-1">
                 <span className="text-gradient-animated">
@@ -1272,11 +1377,11 @@ export function LandingPage() {
               </span>
             </h1>
 
-            <p className="hero-subtitle mx-auto mt-8 max-w-2xl text-base leading-7 tracking-[-0.01em] text-white/60 md:text-lg">
+            <p className="hero-subtitle mx-auto mt-4 sm:mt-8 max-w-2xl text-sm sm:text-base md:text-lg leading-6 sm:leading-7 tracking-[-0.01em] text-white/60 px-2 sm:px-0">
               {t('landing.hero.subtitle')}
             </p>
 
-            <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+            <div className="mt-8 sm:mt-10 flex flex-col justify-center items-center gap-3 sm:flex-row px-4 sm:px-0">
               <InteractiveHoverButton
                 onClick={goStart}
                 className="hero-cta"
@@ -1289,11 +1394,11 @@ export function LandingPage() {
           {/* 3D Product Mockup */}
           <div
             ref={dashboardRef}
-            className="landing-product-frame group relative z-20 mx-auto mt-20 max-w-6xl [perspective:1600px]"
+            className="landing-product-frame group relative z-20 mx-auto mt-10 sm:mt-20 max-w-6xl [perspective:1600px] overflow-hidden sm:overflow-visible"
           >
-            <div className="relative liquid-glass liquid-reflection rounded-[2rem] p-2.5 transition-transform duration-700 ease-out [transform:rotateX(9deg)_rotateY(-2deg)_scale(.97)] group-hover:[transform:rotateX(2deg)_rotateY(1deg)_scale(1)]">
-              <div className="absolute inset-0 rounded-[2rem] bg-[#05060a]" />
-              <div className="relative z-10">
+            <div className="relative liquid-glass liquid-reflection rounded-[1.25rem] sm:rounded-[2rem] p-1.5 sm:p-2.5 transition-transform duration-700 ease-out [transform:rotateX(4deg)_rotateY(-1deg)_scale(.98)] sm:[transform:rotateX(9deg)_rotateY(-2deg)_scale(.97)] group-hover:[transform:rotateX(2deg)_rotateY(1deg)_scale(1)]">
+              <div className="absolute inset-0 rounded-[1.25rem] sm:rounded-[2rem] bg-[#05060a]" />
+              <div className="relative z-10 overflow-x-auto">
                 <MockDashboard t={t} />
               </div>
             </div>
@@ -1302,8 +1407,8 @@ export function LandingPage() {
           </div>
 
           {/* Scroll indicator */}
-          <div className="hero-scroll-hint mt-16 flex justify-center">
-            <ChevronDown className="h-6 w-6 animate-bounce-scroll text-white/30" />
+          <div className="hero-scroll-hint mt-10 sm:mt-16 flex justify-center">
+            <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6 animate-bounce-scroll text-white/30" />
           </div>
         </section>
 
@@ -1323,18 +1428,18 @@ export function LandingPage() {
         <div className="section-divider" />
 
         {/* ── Features ──────────────────────────────────────── */}
-        <section ref={featuresRef} id="features" className={cn(MAX, 'relative py-32')}>
-          <div className="mb-20 text-center">
-            <h2 className="section-heading text-4xl font-semibold tracking-[-0.055em] md:text-6xl">
+        <section ref={featuresRef} id="features" className={cn(MAX, 'relative py-16 sm:py-24 md:py-32')}>
+          <div className="mb-12 sm:mb-20 text-center">
+            <h2 className="section-heading text-2xl sm:text-4xl font-semibold tracking-[-0.055em] md:text-6xl">
               <span className="text-gradient-animated">
                 {t('landing.features.title')}
               </span>
             </h2>
-            <p className="section-heading mx-auto mt-6 max-w-xl font-extralight tracking-wide text-white/45">
+            <p className="section-heading mx-auto mt-4 sm:mt-6 max-w-xl text-sm sm:text-base font-extralight tracking-wide text-white/45">
               {t('landing.features.subtitle')}
             </p>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
             {[
               {
                 icon: BarChart3,
@@ -1368,44 +1473,44 @@ export function LandingPage() {
         <div className="section-divider" />
 
         {/* ── Showcase ──────────────────────────────────────── */}
-        <section ref={showcaseRef} id="showcase" className="relative overflow-hidden py-32">
+        <section ref={showcaseRef} id="showcase" className="relative overflow-hidden py-16 sm:py-24 md:py-32">
           <div className={MAX}>
             <MagneticCard>
-              <div className="bento-card rounded-[2rem] p-8 md:p-16">
+              <div className="bento-card rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 md:p-16">
                 <div className="noise-overlay" />
-                <div className="relative z-10 flex flex-col items-center gap-14 lg:flex-row">
-                <div className="lg:w-1/2">
-                  <span className="showcase-overline mb-4 block text-xs font-medium uppercase tracking-[0.2em] text-brand-300/70">
+                <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-14 lg:flex-row">
+                <div className="w-full lg:w-1/2">
+                  <span className="showcase-overline mb-3 block text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] text-brand-300/70">
                     {t('landing.showcase.overline')}
                   </span>
-                  <h2 className="showcase-title text-4xl font-semibold leading-[1.02] tracking-[-0.055em] md:text-6xl">
+                  <h2 className="showcase-title text-2xl sm:text-4xl font-semibold leading-[1.05] tracking-[-0.055em] md:text-6xl">
                     <span className="text-gradient-animated">
                       {t('landing.showcase.title')}
                     </span>
                   </h2>
-                  <p className="showcase-desc mt-6 text-lg font-extralight tracking-wide text-white/50">
+                  <p className="showcase-desc mt-4 sm:mt-6 text-sm sm:text-lg font-extralight tracking-wide text-white/50">
                     {t('landing.showcase.desc')}
                   </p>
-                  <ul className="mt-8 space-y-4">
+                  <ul className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
                     {['point1', 'point2', 'point3'].map((p) => (
                       <li
                         key={p}
-                        className="showcase-point flex items-center gap-3 font-light text-white/75"
+                        className="showcase-point flex items-center gap-3 text-sm sm:text-base font-light text-white/75"
                       >
-                        <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-400/80" />
+                        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-brand-400/80" />
                         {t(`landing.showcase.${p}`)}
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="showcase-chart w-full lg:w-1/2">
-                  <div className="bento-card group/chart rounded-[1.5rem] bg-black/30 p-6">
+                  <div className="bento-card group/chart rounded-[1.25rem] sm:rounded-[1.5rem] bg-black/30 p-4 sm:p-6">
                     <div className="relative z-10">
-                      <div className="mb-8 flex items-center justify-between">
-                        <h4 className="font-light tracking-wide">
+                      <div className="mb-6 sm:mb-8 flex items-center justify-between">
+                        <h4 className="text-xs sm:text-sm font-light tracking-wide">
                           {t('landing.showcase.chartLabel')}
                         </h4>
-                        <span className="rounded-full bg-brand-500/15 px-3 py-1 text-xs font-medium text-brand-200/80">
+                        <span className="rounded-full bg-brand-500/15 px-2.5 py-1 text-[10px] sm:text-xs font-medium text-brand-200/80">
                           88.5%
                         </span>
                       </div>
@@ -1423,20 +1528,20 @@ export function LandingPage() {
         <div className="section-divider" />
 
         {/* ── AI Copilot ────────────────────────────────────── */}
-        <section ref={copilotRef} id="copilot" className={cn(MAX, 'relative py-32 text-center')}>
-          <div className="mx-auto mb-16 max-w-2xl">
-            <h2 className="section-heading text-4xl font-semibold tracking-[-0.055em] md:text-6xl">
+        <section ref={copilotRef} id="copilot" className={cn(MAX, 'relative py-16 sm:py-24 md:py-32 text-center')}>
+          <div className="mx-auto mb-10 sm:mb-16 max-w-2xl">
+            <h2 className="section-heading text-2xl sm:text-4xl font-semibold tracking-[-0.055em] md:text-6xl">
               <span className="text-gradient-animated">
                 {t('landing.copilot.title')}
               </span>
             </h2>
-            <p className="section-heading mt-6 text-lg font-extralight tracking-wide text-white/50">
+            <p className="section-heading mt-4 sm:mt-6 text-sm sm:text-lg font-extralight tracking-wide text-white/50">
               {t('landing.copilot.desc')}
             </p>
           </div>
           <div className="relative flex justify-center">
             <div className="absolute inset-0 scale-50 rounded-full bg-brand-500/15 blur-[140px]" />
-            <div ref={chatFloatRef} className="relative z-10 w-full max-w-md">
+            <div ref={chatFloatRef} className="relative z-10 w-full max-w-md px-2 sm:px-0">
               <ChatMock t={t} />
             </div>
           </div>
@@ -1446,8 +1551,8 @@ export function LandingPage() {
         <div className="section-divider" />
 
         {/* ── Stats / Numbers ───────────────────────────────── */}
-        <section ref={statsRef} className={cn(MAX, 'relative py-32')}>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <section ref={statsRef} className={cn(MAX, 'relative py-16 sm:py-24 md:py-32')}>
+          <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
             {[
               { icon: Users, value: 1284, suffix: '+', label: 'Active Students' },
               { icon: Zap, value: 95, suffix: '%', label: 'Uptime' },
@@ -1456,16 +1561,16 @@ export function LandingPage() {
             ].map((stat) => (
               <div key={stat.label} className="stat-card">
                 <MagneticCard>
-                  <div className="bento-card glow-ring group rounded-[1.5rem] p-8 text-center">
+                  <div className="bento-card glow-ring group rounded-[1.25rem] sm:rounded-[1.5rem] p-4 sm:p-8 text-center">
                     <div className="noise-overlay" />
                     <div className="relative z-10">
-                    <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/[0.08] ring-1 ring-brand-400/20 transition-transform duration-400 group-hover:scale-[1.2] group-hover:rotate-[10deg]">
-                      <stat.icon className="h-6 w-6 text-brand-400/80" />
+                    <div className="mx-auto mb-3 sm:mb-4 inline-flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-brand-500/[0.08] ring-1 ring-brand-400/20 transition-transform duration-400 group-hover:scale-[1.2] group-hover:rotate-[10deg]">
+                      <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-brand-400/80" />
                     </div>
-                    <div className="text-3xl font-semibold tracking-[-0.04em] text-white md:text-4xl">
+                    <div className="text-2xl sm:text-3xl font-semibold tracking-[-0.04em] text-white md:text-4xl">
                       <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                     </div>
-                    <p className="mt-2 text-sm font-extralight tracking-wide text-white/45">
+                    <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-extralight tracking-wide text-white/45">
                       {stat.label}
                     </p>
                   </div>
@@ -1480,18 +1585,18 @@ export function LandingPage() {
         <div className="section-divider" />
 
         {/* ── Pricing ───────────────────────────────────────── */}
-        <section ref={pricingRef} id="pricing" className={cn(MAX, 'relative py-32')}>
-          <div className="mb-20 text-center">
-            <h2 className="section-heading text-4xl font-semibold tracking-[-0.055em] md:text-6xl">
+        <section ref={pricingRef} id="pricing" className={cn(MAX, 'relative py-16 sm:py-24 md:py-32')}>
+          <div className="mb-12 sm:mb-20 text-center">
+            <h2 className="section-heading text-2xl sm:text-4xl font-semibold tracking-[-0.055em] md:text-6xl">
               <span className="text-gradient-animated">
                 {t('landing.pricing.title')}
               </span>
             </h2>
-            <p className="section-heading mt-4 font-extralight tracking-wide text-white/45">
+            <p className="section-heading mt-3 sm:mt-4 text-sm sm:text-base font-extralight tracking-wide text-white/45">
               {t('landing.pricing.subtitle')}
             </p>
           </div>
-          <div className="grid items-start gap-6 md:grid-cols-3">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-4 -mx-4 md:grid md:grid-cols-3 md:items-start md:gap-6 md:px-0 md:mx-0">
             <PriceCard
               name={t('landing.pricing.starter')}
               price="$49"
@@ -1537,31 +1642,31 @@ export function LandingPage() {
         <div className="section-divider" />
 
         {/* ── Final CTA ─────────────────────────────────────── */}
-        <section ref={ctaRef} className={cn(MAX, 'py-32')}>
+        <section ref={ctaRef} className={cn(MAX, 'py-16 sm:py-24 md:py-32')}>
           <MagneticCard>
-            <div className="cta-box bento-card relative overflow-hidden rounded-[2rem] p-12 text-center md:p-24">
+            <div className="cta-box bento-card relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-12 text-center md:p-24">
               <div className="noise-overlay" />
               {/* Aurora inside CTA */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,107,255,0.18),transparent_60%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(139,92,246,0.10),transparent_50%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,211,238,0.08),transparent_50%)]" />
             <div className="relative z-10">
-              <h2 className="mx-auto max-w-3xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] md:text-6xl">
+              <h2 className="mx-auto max-w-3xl text-2xl sm:text-4xl font-semibold leading-[1.05] tracking-[-0.055em] md:text-6xl">
                 <span className="text-gradient-animated">
                   {t('landing.cta.title')}
                 </span>
               </h2>
-              <p className="mx-auto mt-8 max-w-xl text-lg font-extralight tracking-wide text-white/50">
+              <p className="mx-auto mt-4 sm:mt-8 max-w-xl text-sm sm:text-lg font-extralight tracking-wide text-white/50">
                 {t('landing.cta.desc')}
               </p>
-              <div className="mt-14 flex flex-col justify-center gap-4 sm:flex-row">
+              <div className="mt-8 sm:mt-14 flex flex-col justify-center gap-3 sm:flex-row px-2 sm:px-0">
                 <LiquidButton onClick={goStart} large>
                   {t('landing.cta.primary')}
                   <ArrowRight className="ml-2 inline h-4 w-4" />
                 </LiquidButton>
                 <button
                   onClick={goSignIn}
-                  className="rounded-full border border-white/[0.08] px-12 py-4 font-light tracking-wide backdrop-blur-sm transition-all duration-400 hover:border-white/20 hover:bg-white/[0.04] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+                  className="w-full sm:w-auto rounded-full border border-white/[0.08] px-8 sm:px-12 py-3.5 sm:py-4 font-light tracking-wide backdrop-blur-sm transition-all duration-400 hover:border-white/20 hover:bg-white/[0.04] hover:scale-[1.03] active:scale-[0.97] cursor-pointer text-sm sm:text-base"
                 >
                   {t('landing.cta.secondary')}
                 </button>
@@ -1573,22 +1678,22 @@ export function LandingPage() {
       </main>
 
       {/* ── Footer ──────────────────────────────────────────── */}
-      <footer ref={footerRef} className="relative border-t border-white/[0.04] py-20">
+      <footer ref={footerRef} className="relative border-t border-white/[0.04] py-12 sm:py-20">
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-80" />
         <div className={cn(MAX, 'relative z-10')}>
-          <div className="mb-16 grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-6">
+          <div className="mb-12 sm:mb-16 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-6">
             <div className="footer-col col-span-1 md:col-span-2">
               <Logo size={30} />
-              <p className="mt-6 max-w-xs text-sm font-extralight leading-relaxed tracking-wide text-white/40">
+              <p className="mt-4 sm:mt-6 max-w-xs text-xs sm:text-sm font-extralight leading-relaxed tracking-wide text-white/40">
                 {t('landing.footer.tagline')}
               </p>
             </div>
 
             <div className="footer-col col-span-1 md:col-span-2">
-              <h5 className="mb-6 text-sm font-medium tracking-wide text-white/80">
+              <h5 className="mb-4 sm:mb-6 text-sm font-medium tracking-wide text-white/80">
                 Instagram
               </h5>
-              <ul className="space-y-4 text-sm font-light text-white/40">
+              <ul className="space-y-3 sm:space-y-4 text-sm font-light text-white/40">
                 <li>
                   <a
                     href="https://instagram.com/ilmoz_uz"
@@ -1603,10 +1708,10 @@ export function LandingPage() {
             </div>
 
             <div className="footer-col col-span-1 md:col-span-2">
-              <h5 className="mb-6 text-sm font-medium tracking-wide text-white/80">
+              <h5 className="mb-4 sm:mb-6 text-sm font-medium tracking-wide text-white/80">
                 Telegram
               </h5>
-              <ul className="space-y-4 text-sm font-light text-white/40">
+              <ul className="space-y-3 sm:space-y-4 text-sm font-light text-white/40">
                 <li>
                   <a
                     href="https://t.me/ilmoz_news"
@@ -1630,7 +1735,7 @@ export function LandingPage() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/[0.04] pt-8 text-center text-sm font-extralight tracking-wide text-white/30">
+          <div className="border-t border-white/[0.04] pt-6 sm:pt-8 text-center text-xs sm:text-sm font-extralight tracking-wide text-white/30">
             {t('landing.footer.rights')}
           </div>
         </div>
