@@ -51,7 +51,6 @@ import { buildSubdomainUrl } from "./lib/subdomain";
 import { isPlatformAdmin } from "./lib/access";
 import { Logo } from "./components/ui/Logo";
 import { Avatar } from "./components/ui/Avatar";
-import { BranchNetworkPage } from "./pages/network/BranchNetworkPage";
 
 // ── Route guards ───────────────────────────────────────────────────────────────
 
@@ -312,7 +311,6 @@ export default function App() {
           <Route path="children"      element={<ChildrenPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="settings"      element={<SettingsRoute />} />
-          <Route path="network"       element={<BranchNetworkPage />} />
         </Route>
 
         {/* ── Ilmoz admin console — ismod (moderator) at "/ilmoz-admin" ── */}

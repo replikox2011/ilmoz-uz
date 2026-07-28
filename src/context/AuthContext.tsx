@@ -189,17 +189,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userCenter.networkId &&
           subCenter.networkId === userCenter.networkId;
 
-        console.log("DEBUG SUBDOMAIN ROUTING:", {
-          activeSubdomain,
-          resolvedSubdomainCenterId,
-          profileCenterId: profile.centerId,
-          userCenterName: userCenter.name,
-          userCenterNetworkId: userCenter.networkId,
-          subCenterName: subCenter?.name,
-          subCenterNetworkId: subCenter?.networkId,
-          isSameNetwork
-        });
-
         if (!isSameNetwork && profile.role !== "owner") {
           throw new Error(`wrong-center:${profile.centerId}`);
         } else if (subCenter) {
@@ -228,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return true;
     },
-    [activeSubdomain]
+    []
   );
 
   // ── Firebase Auth state listener ─────────────────────────────────────────

@@ -7,7 +7,6 @@ import { Center, CenterNetwork } from "../../types";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/utils";
-import { buildSubdomainUrl } from "../../lib/subdomain";
 
 // ─── Create Branch Modal ──────────────────────────────────────────────────────
 interface CreateBranchModalProps {
@@ -16,52 +15,35 @@ interface CreateBranchModalProps {
   onClose: () => void;
   onCreated: (branch: Center) => void;
 }
+// ─── Create Branch Modal ──────────────────────────────────────────────────────
+interface CreateBranchModalProps {
+  networkId: string;
+  currency: string;
+  onClose: () => void;
+  onCreated: (branch: Center) => void;
+}
 function CreateBranchModal({ networkId, currency, onClose, onCreated }: CreateBranchModalProps) {
-  const [mode, setMode] = React.useState<"create" | "link">("create");
   const [name, setName] = React.useState("");
-  const [subdomain, setSubdomain] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  const handleSubdomainChange = (v: string) =>
-    setSubdomain(v.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 32));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      if (mode === "create") {
-        if (!name.trim()) {
-          setError("Filial nomini kiriting");
-          setLoading(false);
-          return;
-        }
-        if (subdomain) {
-          const available = await firestoreRepository.isSubdomainAvailable(subdomain);
-          if (!available) {
-            setError("Bu subdomain allaqachon band. Boshqa nom tanlang.");
-            setLoading(false);
-            return;
-          }
-        }
-        const branch = await firestoreRepository.createBranch(networkId, {
-          name: name.trim(),
-          subdomain: subdomain || undefined,
-          description: description.trim() || undefined,
-          currency,
-        });
-        onCreated(branch);
-      } else {
-        if (!subdomain.trim()) {
-          setError("Bog'lash uchun subdomainni kiriting");
-          setLoading(false);
-          return;
-        }
-        const branch = await firestoreRepository.linkBranchToNetwork(networkId, subdomain.trim());
-        onCreated(branch);
+      if (!name.trim()) {
+        setError("Filial nomini kiriting");
+        setLoading(false);
+        return;
       }
+      const branch = await firestoreRepository.createBranch(networkId, {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        currency,
+      });
+      onCreated(branch);
     } catch (err: any) {
       setError(err?.message ?? "Xato yuz berdi");
     } finally {
@@ -82,31 +64,7 @@ function CreateBranchModal({ networkId, currency, onClose, onCreated }: CreateBr
             <div className="h-9 w-9 rounded-xl bg-brand-500/15 flex items-center justify-center">
               <GitBranch className="h-4 w-4 text-brand-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white">Filial boshqaruvi</h2>
-          </div>
-
-          {/* Mode Toggle Tabs */}
-          <div className="flex border-b border-white/10 mb-5">
-            <button
-              type="button"
-              onClick={() => { setMode("create"); setError(null); }}
-              className={cn(
-                "flex-1 pb-2.5 text-xs font-medium uppercase tracking-wider border-b-2 text-center transition cursor-pointer",
-                mode === "create" ? "border-brand-500 text-brand-400" : "border-transparent text-white/40 hover:text-white/60"
-              )}
-            >
-              Yangi filial ochish
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode("link"); setError(null); }}
-              className={cn(
-                "flex-1 pb-2.5 text-xs font-medium uppercase tracking-wider border-b-2 text-center transition cursor-pointer",
-                mode === "link" ? "border-brand-500 text-brand-400" : "border-transparent text-white/40 hover:text-white/60"
-              )}
-            >
-              Mavjudini bog'lash
-            </button>
+            <h2 className="text-lg font-semibold text-white">Yangi filial qo'shish</h2>
           </div>
 
           {error && (
@@ -117,66 +75,33 @@ function CreateBranchModal({ networkId, currency, onClose, onCreated }: CreateBr
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "create" ? (
-              <>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-white/60">Filial nomi *</label>
-                  <input
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 transition"
-                    placeholder="Star Academy — Nukus filiali"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-white/60">Subdomain (ixtiyoriy)</label>
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-brand-500/60 focus-within:ring-1 focus-within:ring-brand-500/30 transition">
-                    <input
-                      className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
-                      placeholder="nukus-filial"
-                      value={subdomain}
-                      onChange={e => handleSubdomainChange(e.target.value)}
-                    />
-                    <span className="text-xs text-white/30 shrink-0">.ilmoz.uz</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-white/60">Tavsif (ixtiyoriy)</label>
-                  <textarea
-                    className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 transition"
-                    placeholder="Nukus shahridagi filialimiz..."
-                    rows={2}
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                  />
-                </div>
-              </>
-            ) : (
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/60">Mavjud filial subdomeni *</label>
-                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-brand-500/60 focus-within:ring-1 focus-within:ring-brand-500/30 transition">
-                  <input
-                    className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 outline-none"
-                    placeholder="applikata1"
-                    value={subdomain}
-                    onChange={e => handleSubdomainChange(e.target.value)}
-                    required
-                  />
-                  <span className="text-xs text-white/30 shrink-0">.ilmoz.uz</span>
-                </div>
-                <p className="mt-2 text-xs text-white/40 leading-relaxed">
-                  Tizimda allaqachon mavjud bo'lgan, lekin tarmoqqa bog'lanmagan filial subdomeni nomini yozing.
-                </p>
-              </div>
-            )}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/60">Filial nomi *</label>
+              <input
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 transition"
+                placeholder="Star Academy — Nukus filiali"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white/60">Tavsif (ixtiyoriy)</label>
+              <textarea
+                className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 transition"
+                placeholder="Nukus shahridagi filialimiz..."
+                rows={2}
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+              />
+            </div>
 
             <div className="flex gap-3 pt-1">
               <Button type="button" variant="glass" className="flex-1" onClick={onClose}>
                 Bekor qilish
               </Button>
               <Button type="submit" className="flex-1" loading={loading}>
-                {mode === "create" ? "Filial yaratish" : "Bog'lash"}
+                Filial yaratish
               </Button>
             </div>
           </form>
@@ -190,11 +115,10 @@ function CreateBranchModal({ networkId, currency, onClose, onCreated }: CreateBr
 interface BranchCardProps {
   branch: Center;
   isHQ: boolean;
+  branchIndex: number;
   onRemove?: (id: string) => void;
 }
-function BranchCard({ branch, isHQ, onRemove }: BranchCardProps) {
-  const branchUrl = branch.subdomain ? buildSubdomainUrl(branch.subdomain) : null;
-
+function BranchCard({ branch, isHQ, branchIndex, onRemove }: BranchCardProps) {
   return (
     <motion.div
       layout
@@ -227,23 +151,14 @@ function BranchCard({ branch, isHQ, onRemove }: BranchCardProps) {
               {branch.description && (
                 <p className="mt-0.5 text-xs text-white/40">{branch.description}</p>
               )}
-              {branch.subdomain ? (
-                <a
-                  href={branchUrl ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 transition"
-                >
-                  <Globe className="h-3 w-3" />
-                  {branch.subdomain}.ilmoz.uz
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : (
-                <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-white/25">
-                  <Globe className="h-3 w-3" />
-                  Subdomain yo'q
-                </span>
-              )}
+              <a
+                href={`/${branchIndex}`}
+                className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 px-2 py-0.5 text-[10px] font-medium text-brand-400 transition"
+              >
+                <Globe className="h-3 w-3" />
+                Manzil: /{branchIndex}
+                <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
           </div>
 
@@ -445,13 +360,14 @@ export function BranchNetworkPage() {
             ) : (
               <div className="space-y-3">
                 {/* HQ card */}
-                {hqCenter && <BranchCard branch={hqCenter} isHQ={true} />}
+                {hqCenter && <BranchCard branch={hqCenter} isHQ={true} branchIndex={0} />}
                 {/* Branch cards */}
-                {branches.map(branch => (
+                {branches.map((branch, idx) => (
                   <BranchCard
                     key={branch.id}
                     branch={branch}
                     isHQ={false}
+                    branchIndex={idx + 1}
                     onRemove={handleRemoveBranch}
                   />
                 ))}

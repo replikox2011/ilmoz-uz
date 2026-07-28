@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, CalendarDays,
   Wallet, BarChart3, Sparkles,
-  UserSquare2, BookMarked, ClipboardList, type LucideIcon, GitBranch,
+  UserSquare2, BookMarked, ClipboardList, type LucideIcon,
 } from "lucide-react";
 import { Role } from "../types";
 import { TranslationKey } from "../i18n/I18nContext";
@@ -24,7 +24,6 @@ export const NAV_ITEMS: NavItem[] = [
   { labelKey: "nav.courses",       to: "/courses",       icon: BookMarked,      roles: ["owner","director","administrator"] },
   { labelKey: "nav.finance",       to: "/finance",       icon: Wallet,          roles: ["owner","director","administrator"] },
   { labelKey: "nav.analytics",     to: "/analytics",     icon: BarChart3,       roles: ["owner","director","administrator"] },
-  { labelKey: "nav.network",       to: "/network",       icon: GitBranch,       roles: ["owner"] },
   { labelKey: "nav.copilot",       to: "/ai",            icon: Sparkles,        roles: ["owner","director","administrator","teacher"] },
   { labelKey: "nav.children",      to: "/children",      icon: UserSquare2,     roles: ["parent"] },
 ];
