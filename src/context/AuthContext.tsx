@@ -9,7 +9,7 @@ import {
   updateProfile,
   signOut,
 } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, getDocs, query, collection, where, limit } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { Center, CenterNetwork, Role, User } from "../types";
 import { firestoreRepository } from "../data/firestoreRepository";
@@ -25,6 +25,13 @@ const AVATAR_COLORS = [
 function pickColor(uid: string): string {
   const sum = uid.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+function strip<T extends object>(obj: T): T {
+  const next: any = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) next[k] = v;
+  }
+  return next;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,13 +109,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Load Firestore profile for a Firebase user ──────────────────────────
   const loadProfile = React.useCallback(
     async (fb: FirebaseUser, resolvedSubdomainCenterId?: string | null): Promise<boolean> => {
-      const snap = await getDoc(doc(db, "userProfiles", fb.uid));
-      if (!snap.exists()) return false;
+      let snap;
+      let isLegacy = false;
+
+      if (resolvedSubdomainCenterId) {
+        // Try the new composite key centerId_userId
+        snap = await getDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`));
+        if (!snap.exists()) {
+          // Fallback to legacy flat doc key
+          snap = await getDoc(doc(db, "userProfiles", fb.uid));
+          isLegacy = snap.exists();
+        }
+      } else {
+        // Root domain: query by field 'id'
+        const s = await getDocs(query(collection(db, "userProfiles"), where("id", "==", fb.uid), limit(1)));
+        if (!s.empty) {
+          snap = s.docs[0];
+        } else {
+          // Fallback to legacy key
+          snap = await getDoc(doc(db, "userProfiles", fb.uid));
+          isLegacy = snap.exists();
+        }
+      }
+
+      // Dynamic owner mapping / recovery:
+      // If we are on a subdomain but have no profile document yet, check if this user is the owner
+      // of this center according to ownerEmail. If so, automatically create their owner profile document!
+      if ((!snap || !snap.exists()) && resolvedSubdomainCenterId && fb.email) {
+        const subCenter = await firestoreRepository.getCenter(resolvedSubdomainCenterId);
+        if (subCenter && subCenter.ownerEmail && subCenter.ownerEmail.toLowerCase() === fb.email.toLowerCase()) {
+          const avatarColor = pickColor(fb.uid);
+          const newUser: User = {
+            id: fb.uid,
+            centerId: resolvedSubdomainCenterId,
+            name: fb.displayName || fb.email.split("@")[0] || "Markaz egasi",
+            email: fb.email.toLowerCase(),
+            username: fb.email.split("@")[0].toLowerCase(),
+            role: "owner" as Role,
+            avatarColor,
+            createdAt: new Date().toISOString(),
+          };
+          await setDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`), strip(newUser as any));
+          snap = await getDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`));
+        }
+      }
+
+      if (!snap || !snap.exists()) return false;
 
       const profile = { id: fb.uid, ...(snap.data() as Omit<User, "id">) };
 
+      // Legacy migration: if the user loaded a legacy flat profile doc, and they are on the correct subdomain,
+      // clone/migrate their profile doc to the new composite key format!
+      if (isLegacy && resolvedSubdomainCenterId && profile.centerId === resolvedSubdomainCenterId) {
+        await setDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`), snap.data());
+      }
+
       const userCenter = await firestoreRepository.getCenter(profile.centerId);
       if (!userCenter) return false;
+
+      // Scan and auto-set ownerEmail on any center that doesn't have it set yet
+      if (profile.role === "owner" && fb.email) {
+        firestoreRepository.adminListAllCenters().then(async (allCenters) => {
+          for (const c of allCenters) {
+            if (!c.ownerEmail) {
+              await firestoreRepository.updateCenter(c.id, { ownerEmail: fb.email!.toLowerCase() });
+            }
+          }
+        }).catch(() => {});
+      }
 
       let activeCenter = userCenter;
 
@@ -263,7 +331,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // NOTE: a center owner is NOT a platform admin. The Ilmoz platform admin
       // (isadm) is created only through the dedicated /setupforadmin2011 flow.
-      const newCenter = await firestoreRepository.createCenter({ name: centerName, subdomain, description, logoUrl });
+      const newCenter = await firestoreRepository.createCenter({
+        name: centerName,
+        subdomain,
+        description,
+        logoUrl,
+        ownerEmail: email.toLowerCase(),
+      });
       const avatarColor = pickColor(cred.user.uid);
       const newUser = await firestoreRepository.createUser({
         id: cred.user.uid,
@@ -291,7 +365,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // NOTE: a center owner is NOT a platform admin. The Ilmoz platform admin
     // (isadm) is created only through the dedicated /setupforadmin2011 flow.
-    const newCenter = await firestoreRepository.createCenter({ name: centerName, subdomain, description, logoUrl });
+    const newCenter = await firestoreRepository.createCenter({
+      name: centerName,
+      subdomain,
+      description,
+      logoUrl,
+      ownerEmail: fbUser.email?.toLowerCase(),
+    });
     const avatarColor = pickColor(fbUser.uid);
 
     const newUser = await firestoreRepository.createUser({
@@ -315,7 +395,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const markPhoneVerified = async () => {
     if (!fbUser) return;
-    await updateDoc(doc(db, "userProfiles", fbUser.uid), { phoneVerified: true });
+    const docId = center ? `${center.id}_${fbUser.uid}` : fbUser.uid;
+    const compositeDoc = doc(db, "userProfiles", docId);
+    const legacyDoc = doc(db, "userProfiles", fbUser.uid);
+    const compSnap = await getDoc(compositeDoc);
+    if (compSnap.exists()) {
+      await updateDoc(compositeDoc, { phoneVerified: true });
+    } else {
+      await updateDoc(legacyDoc, { phoneVerified: true });
+    }
     setUser(prev => prev ? { ...prev, phoneVerified: true } : prev);
     setNeedsPhoneVerification(false);
   };

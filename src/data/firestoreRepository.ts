@@ -38,7 +38,7 @@ export class FirestoreRepository implements Repository {
     const s = await getDoc(doc(db, "centers", id));
     return s.exists() ? fromSnap<Center>(s) : null;
   }
-  async createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string }) {
+  async createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string; ownerEmail?: string }) {
     const id = (input as any).id ?? genId("center");
     const c: Center = {
       id,
@@ -47,6 +47,7 @@ export class FirestoreRepository implements Repository {
       ...(input.subdomain ? { subdomain: input.subdomain } : {}),
       ...(input.description ? { description: input.description } : {}),
       ...(input.logoUrl ? { logoUrl: input.logoUrl } : {}),
+      ...(input.ownerEmail ? { ownerEmail: input.ownerEmail } : {}),
       currency: input.currency ?? "USD",
       createdAt: new Date().toISOString(),
     };
@@ -199,7 +200,8 @@ export class FirestoreRepository implements Repository {
       createdAt: input.createdAt ?? new Date().toISOString(),
       ...rest
     };
-    await setDoc(doc(db, "userProfiles", id), strip(user as any));
+    const docId = user.centerId ? `${user.centerId}_${id}` : id;
+    await setDoc(doc(db, "userProfiles", docId), strip(user as any));
 
     // Write a public username→email index so pre-auth login lookups work
     // even when Firestore rules require auth for userProfiles.
@@ -407,10 +409,14 @@ export class FirestoreRepository implements Repository {
     });
   }
   async adminUpdateModerator(id: string, patch: Partial<Omit<Moderator, "id">>): Promise<void> {
-    await updateDoc(doc(db, "userProfiles", id), strip(patch as any));
+    const s = await getDocs(query(collection(db, "userProfiles"), where("id", "==", id), limit(1)));
+    const docId = !s.empty ? s.docs[0].id : id;
+    await updateDoc(doc(db, "userProfiles", docId), strip(patch as any));
   }
   async adminDeleteModerator(id: string): Promise<void> {
-    await updateDoc(doc(db, "userProfiles", id), { ismod: false });
+    const s = await getDocs(query(collection(db, "userProfiles"), where("id", "==", id), limit(1)));
+    const docId = !s.empty ? s.docs[0].id : id;
+    await updateDoc(doc(db, "userProfiles", docId), { ismod: false });
   }
 
   // ── Audit logs ──────────────────────────────────────��─────────────────────

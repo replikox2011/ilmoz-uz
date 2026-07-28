@@ -62,6 +62,7 @@ export interface Center {
   // ── Network / Branch support ───────────────────────────────────────────────
   networkId?: string;        // id of the CenterNetwork this center belongs to
   isHeadquarters?: boolean;  // true for the root/HQ center of a network
+  ownerEmail?: string;       // email of the center owner (used for multi-tenant account recovery)
 }
 
 /**

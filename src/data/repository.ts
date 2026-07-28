@@ -17,7 +17,7 @@ import {
 export interface Repository {
   // Tenancy
   getCenter(centerId: string): Promise<Center | null>;
-  createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string }): Promise<Center>;
+  createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string; ownerEmail?: string }): Promise<Center>;
   updateCenter(centerId: string, patch: Partial<Omit<Center, "id">>): Promise<Center>;
   isSubdomainAvailable(subdomain: string): Promise<boolean>;
   getSubdomainCenterId(subdomain: string): Promise<string | null>;

@@ -50,7 +50,7 @@ export class MockRepository implements Repository {
   async getCenter(centerId: string) {
     return delay(load().centers.find(x => x.id === centerId) ?? null);
   }
-  async createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string }) {
+  async createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string; ownerEmail?: string }) {
     const db = load();
     const center: Center = {
       id: (input as any).id ?? uid("center"),
@@ -59,6 +59,7 @@ export class MockRepository implements Repository {
       ...(input.subdomain ? { subdomain: input.subdomain } : {}),
       ...(input.description ? { description: input.description } : {}),
       ...(input.logoUrl ? { logoUrl: input.logoUrl } : {}),
+      ...(input.ownerEmail ? { ownerEmail: input.ownerEmail } : {}),
       currency: input.currency ?? "USD",
       createdAt: new Date(0).toISOString(),
     };
