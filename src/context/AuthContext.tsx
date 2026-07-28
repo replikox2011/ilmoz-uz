@@ -107,19 +107,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const profile = { id: fb.uid, ...(snap.data() as Omit<User, "id">) };
 
-      // Enforce tenant isolation: if on a subdomain, user must belong to that center.
-      // Encode the user's real centerId in the error so the catch block can redirect them.
+      const userCenter = await firestoreRepository.getCenter(profile.centerId);
+      if (!userCenter) return false;
+
+      let activeCenter = userCenter;
+
+      // Enforce tenant isolation, but allow network owners/members to access branch subdomains of the same network
       if (resolvedSubdomainCenterId && profile.centerId !== resolvedSubdomainCenterId) {
-        throw new Error(`wrong-center:${profile.centerId}`);
+        const subCenter = await firestoreRepository.getCenter(resolvedSubdomainCenterId);
+        
+        const isSameNetwork =
+          subCenter &&
+          userCenter.networkId &&
+          subCenter.networkId === userCenter.networkId;
+
+        if (!isSameNetwork) {
+          throw new Error(`wrong-center:${profile.centerId}`);
+        } else {
+          // If in the same network, set activeCenter to the branch subdomain center
+          activeCenter = subCenter;
+        }
       }
 
-      const c = await firestoreRepository.getCenter(profile.centerId);
       setUser(profile);
-      setCenter(c);
+      setCenter(activeCenter);
       setNeedsCenterSetup(false);
+
       // Load network if center belongs to one
-      if (c?.networkId) {
-        firestoreRepository.getNetwork(c.networkId).then(setNetwork).catch(() => {});
+      if (activeCenter.networkId) {
+        firestoreRepository.getNetwork(activeCenter.networkId).then(setNetwork).catch(() => {});
       } else {
         setNetwork(null);
       }
