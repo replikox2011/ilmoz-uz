@@ -1,7 +1,7 @@
 import * as React from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { generateAlternatives } from "../lib/subdomain";
+import { generateAlternatives, isReservedSubdomain } from "../lib/subdomain";
 
 interface SubdomainAvailability {
   available: boolean | null; // null = not checked yet
@@ -31,13 +31,23 @@ export function useSubdomainAvailability(subdomain: string): SubdomainAvailabili
 
     const timer = setTimeout(async () => {
       try {
+        if (isReservedSubdomain(subdomain)) {
+          setAvailable(false);
+          const alts = generateAlternatives(subdomain).filter(a => !isReservedSubdomain(a));
+          const checks = await Promise.all(
+            alts.map(a => getDoc(doc(db, "subdomains", a)).then(s => ({ alt: a, free: !s.exists() })))
+          );
+          setSuggestions(checks.filter(c => c.free).map(c => c.alt).slice(0, 3));
+          return;
+        }
+
         const snap = await getDoc(doc(db, "subdomains", subdomain));
         const isFree = !snap.exists();
         setAvailable(isFree);
 
         if (!isFree) {
           // Check each alternative for availability
-          const alts = generateAlternatives(subdomain);
+          const alts = generateAlternatives(subdomain).filter(a => !isReservedSubdomain(a));
           const checks = await Promise.all(
             alts.map(a => getDoc(doc(db, "subdomains", a)).then(s => ({ alt: a, free: !s.exists() })))
           );

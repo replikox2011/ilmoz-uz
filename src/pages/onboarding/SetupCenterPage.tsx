@@ -156,7 +156,7 @@ export function SetupCenterPage() {
             />
           </Field>
 
-          <Button type="submit" loading={isSubmitting} className="w-full mt-2" size="lg">
+          <Button type="submit" loading={isSubmitting} disabled={available === false || checking} className="w-full mt-2" size="lg">
             Launch my workspace
           </Button>
         </form>

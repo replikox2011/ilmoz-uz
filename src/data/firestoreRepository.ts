@@ -18,6 +18,7 @@ import {
   Coupon,
 } from "../types/admin";
 import { Repository } from "./repository";
+import { isReservedSubdomain } from "../lib/subdomain";
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -52,6 +53,10 @@ export class FirestoreRepository implements Repository {
       createdAt: new Date().toISOString(),
     };
     if (input.subdomain) {
+      const isFree = await this.isSubdomainAvailable(input.subdomain);
+      if (!isFree) {
+        throw new Error("Subdomain is already taken");
+      }
       const batch = writeBatch(db);
       batch.set(doc(db, "centers", id), c);
       batch.set(doc(db, "subdomains", input.subdomain), { centerId: id });
@@ -62,6 +67,7 @@ export class FirestoreRepository implements Repository {
     return c;
   }
   async isSubdomainAvailable(subdomain: string) {
+    if (isReservedSubdomain(subdomain)) return false;
     const snap = await getDoc(doc(db, "subdomains", subdomain));
     return !snap.exists();
   }

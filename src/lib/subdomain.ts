@@ -9,6 +9,49 @@ export const ROOT_DOMAIN = process.env.REACT_APP_ROOT_DOMAIN || "ilmoz.uz";
 
 const ROOT_HOSTNAMES = ["localhost", ROOT_DOMAIN, `www.${ROOT_DOMAIN}`];
 
+export const RESERVED_SUBDOMAINS = new Set([
+  "support",
+  "admin",
+  "api",
+  "app",
+  "www",
+  "mail",
+  "blog",
+  "dev",
+  "status",
+  "help",
+  "security",
+  "portal",
+  "cloud",
+  "static",
+  "assets",
+  "payment",
+  "billing",
+  "docs",
+  "legal",
+  "terms",
+  "privacy",
+  "test",
+  "demo",
+  "office",
+  "jobs",
+  "careers",
+  "ilmoz",
+  "dashboard",
+  "login",
+  "register",
+  "signup",
+  "setup",
+  "presentation",
+  "pitch",
+  "promo",
+]);
+
+/** Check if a subdomain slug is a system-reserved/technical name. */
+export function isReservedSubdomain(subdomain: string): boolean {
+  return RESERVED_SUBDOMAINS.has(subdomain.toLowerCase());
+}
+
 /** Extract the subdomain from the current hostname, or null if on the root domain. */
 export function extractSubdomain(hostname: string): string | null {
   const parts = hostname.split(".");
