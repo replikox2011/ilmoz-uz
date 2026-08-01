@@ -29,9 +29,9 @@ export const DEMO_USERS: User[] = [
 ];
 
 export const DEMO_ROOMS: Room[] = [
-  { id: "room_101", centerId: c, name: "Room 101", capacity: 14 },
-  { id: "room_203", centerId: c, name: "Room 203", capacity: 12 },
-  { id: "room_lab", centerId: c, name: "Computer Lab", capacity: 20 },
+  { id: "room_101", centerId: c, name: "Room 101" },
+  { id: "room_203", centerId: c, name: "Room 203" },
+  { id: "room_lab", centerId: c, name: "Computer Lab" },
 ];
 
 export const DEMO_COURSES: Course[] = [

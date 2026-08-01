@@ -44,7 +44,7 @@ export const COPILOT_TOOLS = [
     type: "function" as const,
     function: {
       name: "list_rooms",
-      description: "List all classrooms/rooms available in the center with IDs and capacity",
+      description: "List all classrooms/rooms available in the center with IDs",
       parameters: { type: "object", properties: {}, required: [] as string[] },
     },
   },
@@ -99,9 +99,8 @@ export const COPILOT_TOOLS = [
         type: "object",
         properties: {
           name: { type: "string", description: "Room name or number e.g. 'Room 101'" },
-          capacity: { type: "number", description: "Max number of students" },
         },
-        required: ["name", "capacity"] as string[],
+        required: ["name"] as string[],
       },
     },
   },
@@ -209,7 +208,6 @@ export async function executeTool(
       return snapshot.rooms.map(r => ({
         id: r.id,
         name: r.name,
-        capacity: r.capacity,
       }));
 
     case "list_courses":
@@ -253,7 +251,6 @@ export async function executeTool(
       return await repo.createRoom({
         centerId,
         name: String(args.name),
-        capacity: Number(args.capacity),
       });
 
     case "create_course":

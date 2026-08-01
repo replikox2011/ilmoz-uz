@@ -40,6 +40,7 @@ const COURSE_COLORS = [
   "#f59e0b","#6366f1","#14b8a6","#f97316",
 ];
 
+
 const editSchema = z.object({
   name:        z.string().min(2, "Мин. 2 символа"),
   description: z.string().optional(),
@@ -126,6 +127,14 @@ export function CourseDetailPage() {
     if (!center || !courseId || !course) return;
     setEditSaving(true);
     try {
+      // Названия аудиторий должны стать реальными документами в centers/{id}/rooms:
+      // форма группы выбирает из этой коллекции и хранит roomId для проверки конфликтов.
+      const existing = new Map(data.rooms.map(r => [r.name.toLowerCase(), r]));
+      for (const name of editRooms) {
+        if (existing.has(name.toLowerCase())) continue;
+        await repo.createRoom({ centerId: center.id, name });
+      }
+
       const patch = {
         name: values.name,
         description: values.description,

@@ -21,6 +21,7 @@ const COURSE_COLORS = [
   "#f59e0b", "#6366f1", "#14b8a6", "#f97316",
 ];
 
+
 const schema = z.object({
   name:        z.string().min(2, "Мин. 2 символа"),
   description: z.string().optional(),
@@ -87,6 +88,15 @@ export function CoursesPage() {
     if (!center) return;
     setSaving(true);
     try {
+      // Названия аудиторий должны стать реальными документами в centers/{id}/rooms:
+      // форма группы выбирает из этой коллекции и хранит roomId для проверки конфликтов.
+      // Иначе введённое здесь остаётся просто подписью на карточке курса.
+      const existing = new Map(data.rooms.map(r => [r.name.toLowerCase(), r]));
+      for (const name of rooms) {
+        if (existing.has(name.toLowerCase())) continue;
+        await repo.createRoom({ centerId: center.id, name });
+      }
+
       await repo.createCourse({
         centerId: center.id,
         name: values.name,
@@ -334,7 +344,7 @@ export function CoursesPage() {
               placeholder="Краткое описание курса"
             />
           </Field>
-          <Field label="Аудитории (необязательно)">
+          <Field label="Аудитории (необязательно)" hint="Новые аудитории будут созданы в центре и станут доступны при создании группы">
             <div className="flex gap-2">
               <div className="flex-1">
                 <Input

@@ -100,7 +100,6 @@ export interface Room {
   id: string;
   centerId: string;
   name: string;
-  capacity: number;
 }
 
 export interface Course {

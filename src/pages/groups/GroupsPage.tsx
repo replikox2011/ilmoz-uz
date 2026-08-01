@@ -58,6 +58,7 @@ const EMPTY_FORM: FormState = {
   startDate: "", price: "",
 };
 
+
 // ── component ────────────────────────────────────────────────────────────────
 export function GroupsPage() {
   const { t } = useI18n();
@@ -98,6 +99,32 @@ export function GroupsPage() {
   if (availableRooms.length === 0 && validRooms.length > 0) {
     availableRooms = rooms; // fallback if mapped rooms don't exist (e.g. deleted or typo)
   }
+
+  // Курсы, созданные до того, как форма курса начала создавать настоящие аудитории,
+  // хранят в `rooms` только названия. Группа же ссылается на roomId, поэтому такие
+  // названия здесь материализуются в документы centers/{id}/rooms — иначе выбирать нечего.
+  const backfilled = React.useRef<Set<string>>(new Set());
+  React.useEffect(() => {
+    if (!center || !role || !isStaff(role) || !selectedCourse) return;
+    const labels = selectedCourse.rooms?.filter(Boolean) ?? [];
+    if (labels.length === 0) return;
+
+    const known = new Set(rooms.map(r => r.name.toLowerCase()));
+    const missing = labels.filter(
+      name => !known.has(name.toLowerCase()) && !backfilled.current.has(name.toLowerCase())
+    );
+    if (missing.length === 0) return;
+
+    missing.forEach(name => backfilled.current.add(name.toLowerCase()));
+    Promise.all(
+      missing.map(name =>
+        repo.createRoom({ centerId: center.id, name })
+      )
+    ).catch(() => {
+      // Повторим при следующем открытии формы, если запись не удалась.
+      missing.forEach(name => backfilled.current.delete(name.toLowerCase()));
+    });
+  }, [center, role, selectedCourse, rooms]);
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -436,7 +463,7 @@ export function GroupsPage() {
             {errors.teacherId && <p className="mt-1 text-xs text-red-400">{errors.teacherId}</p>}
           </div>
 
-          {/* Room + capacity */}
+          {/* Room */}
           <div>
             <label className="block text-xs text-white/50 mb-1">{t("groups.field.room")}</label>
             <select
@@ -445,9 +472,9 @@ export function GroupsPage() {
               disabled={!form.courseId}
               className="h-10 w-full rounded-xl border border-white/10 bg-[#0f1115] px-3 text-sm text-white outline-none transition focus:border-brand-400/50 disabled:opacity-40"
             >
-              <option value="">{!form.courseId ? t("groups.select.courseFirst") : availableRooms.length === 0 ? t("groups.select.noRooms") : t("groups.select.room")}</option>
+              <option value="">{!form.courseId ? t("groups.select.courseFirst") : availableRooms.length === 0 ? t("groups.select.noRoomsInCenter") : t("groups.select.room")}</option>
               {availableRooms.map(r => (
-                <option key={r.id} value={r.id}>{r.name} ({t("groups.roomCapacity").replace("{n}", String(r.capacity))})</option>
+                <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
             {errors.roomId && <p className="mt-1 text-xs text-red-400">{errors.roomId}</p>}

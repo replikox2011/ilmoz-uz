@@ -92,7 +92,6 @@ const layoutKeys = {
     "topbar.group.active": "Active",
     "topbar.group.completed": "Completed",
     "topbar.group.studentsShort": "students",
-    "topbar.room.capacity": "Capacity",
 
     "admin.title": "Ilmoz Admin",
     "admin.subtitle": "Platform console",
@@ -378,7 +377,6 @@ const layoutKeys = {
     "topbar.group.active": "Активна",
     "topbar.group.completed": "Завершена",
     "topbar.group.studentsShort": "уч.",
-    "topbar.room.capacity": "Вместимость",
 
     "admin.title": "Ilmoz Админ",
     "admin.subtitle": "Платформенная консоль",
@@ -664,7 +662,6 @@ const layoutKeys = {
     "topbar.group.active": "Faol",
     "topbar.group.completed": "Yakunlangan",
     "topbar.group.studentsShort": "o'quvchi",
-    "topbar.room.capacity": "Sig'im",
 
     "admin.title": "Ilmoz Admin",
     "admin.subtitle": "Platforma konsoli",
