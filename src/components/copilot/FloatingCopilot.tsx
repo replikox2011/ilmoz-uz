@@ -34,10 +34,11 @@ export function FloatingCopilot() {
     groups: data.groups,
     students: data.students,
     teachers: data.teachers,
+    parents: data.users.filter(u => u.role === "parent"),
     rooms: data.rooms,
     courses: data.courses,
     currentUserId: user?.id,
-  }), [data.groups, data.students, data.teachers, data.rooms, data.courses, user?.id]);
+  }), [data.groups, data.students, data.teachers, data.users, data.rooms, data.courses, user?.id]);
 
   const systemPrompt = React.useMemo(() => {
     const activeGroups = data.groups.filter(g => g.status === "active").length;
@@ -225,7 +226,7 @@ const MINI_ICONS: Record<string, React.ReactNode> = {
   "groq-fast": <Zap className="h-3.5 w-3.5" />,
   "groq-pro":  <Brain className="h-3.5 w-3.5" />,
   "gpt-4o":    <Bot className="h-3.5 w-3.5" />,
-  "openai-gpt-oss-free": <Sparkles className="h-3.5 w-3.5" />,
+  "ling-3-flash-free": <Sparkles className="h-3.5 w-3.5" />,
 };
 
 function MiniModelPicker({ value, onChange }: { value: CopilotModel; onChange: (m: CopilotModel) => void }) {

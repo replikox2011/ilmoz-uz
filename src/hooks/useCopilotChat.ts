@@ -8,7 +8,7 @@ const MAX_STORED = 100;
 const MAX_TOOL_ROUNDS = 6;
 
 // ── Model definitions ─────────────────────────────────────────────────────────
-export type CopilotModel = "openai-gpt-oss-free";
+export type CopilotModel = "ling-3-flash-free";
 
 export interface ModelConfig {
   id: CopilotModel;
@@ -18,7 +18,7 @@ export interface ModelConfig {
 }
 
 export const COPILOT_MODELS: ModelConfig[] = [
-  { id: "openai-gpt-oss-free", label: "GPT OSS 20B (Free)", sublabel: "OpenRouter", apiModel: "openai/gpt-oss-20b:free" },
+  { id: "ling-3-flash-free", label: "Ling 3.0 Flash (Free)", sublabel: "OpenRouter", apiModel: "inclusionai/ling-3.0-flash:free" },
 ];
 
 const MODEL_STORAGE_KEY = "ilmoz:copilot:model";
@@ -28,7 +28,7 @@ export function loadSavedModel(): CopilotModel {
     const v = localStorage.getItem(MODEL_STORAGE_KEY) as CopilotModel | null;
     if (v && COPILOT_MODELS.some(m => m.id === v)) return v;
   } catch { /* ignore */ }
-  return "openai-gpt-oss-free";
+  return "ling-3-flash-free";
 }
 
 export function saveModel(model: CopilotModel) {

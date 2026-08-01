@@ -1,14 +1,81 @@
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { secondaryAuth } from "../../lib/firebase";
 import { firestoreRepository as repo } from "../../data/firestoreRepository";
-import { Group, Student, User, Room, Test, TestQuestion } from "../../types";
+import { Group, Student, User, Room, Test, TestQuestion, Role } from "../../types";
 import { generateTestWithWebSearch } from "./generateTest";
 
 const AVATAR_COLORS = ["#3b6bff","#7c3aed","#059669","#d97706","#dc2626","#0891b2","#be185d","#65a30d"];
 const pickColor = (s: string) => AVATAR_COLORS[s.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length];
 
+/** Домены псевдо-email по ролям — вход идёт по username, email только для Firebase Auth. */
+const ROLE_EMAIL_DOMAIN: Partial<Record<Role, string>> = {
+  student: "ilmoz.student",
+  teacher: "ilmoz.teacher",
+  parent: "ilmoz.parent",
+};
+
+/**
+ * Заводит логин так же, как ручные формы: аккаунт в Firebase Auth через
+ * secondaryAuth (чтобы не разлогинить админа) + профиль в userProfiles.
+ * Без этого пользователь не сможет войти — только карточка в списке.
+ */
+async function createAccount(input: {
+  centerId: string;
+  name: string;
+  username: string;
+  password: string;
+  role: Role;
+  phone?: string;
+  parentId?: string;
+  birthDate?: string;
+}): Promise<{ uid: string; avatarColor: string } | { error: string }> {
+  const username = input.username.toLowerCase().trim();
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    return { error: `Username "${username}" is invalid. Use lowercase letters, digits and _ only.` };
+  }
+  if (input.password.length < 6) {
+    return { error: "Password must be at least 6 characters." };
+  }
+  if (await repo.getUserByLogin(username)) {
+    return { error: `Username "${username}" is already taken. Choose a different one.` };
+  }
+
+  const email = `${username}@${ROLE_EMAIL_DOMAIN[input.role] ?? "ilmoz.user"}`;
+  let uid: string;
+  try {
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, input.password);
+    uid = cred.user.uid;
+  } catch (e: any) {
+    return { error: e?.code === "auth/email-already-in-use"
+      ? `Username "${username}" is already taken. Choose a different one.`
+      : (e?.message ?? "Failed to create the account.") };
+  } finally {
+    await secondaryAuth.signOut().catch(() => {});
+  }
+
+  const avatarColor = pickColor(input.name + uid);
+  await repo.createUser({
+    id: uid,
+    centerId: input.centerId,
+    name: input.name,
+    email,
+    username,
+    role: input.role,
+    avatarColor,
+    phoneVerified: false,
+    ...(input.phone ? { phone: input.phone } : {}),
+    ...(input.parentId ? { parentId: input.parentId } : {}),
+    ...(input.birthDate ? { birthDate: input.birthDate } : {}),
+  });
+
+  return { uid, avatarColor };
+}
+
 export interface CenterSnapshot {
   groups: Group[];
   students: Student[];
   teachers: User[];
+  parents: User[];
   rooms: Room[];
   courses: { id: string; name: string; color: string }[];
   /** UID of the signed-in user — used to attribute created records (e.g. tests). */
@@ -59,17 +126,59 @@ export const COPILOT_TOOLS = [
   {
     type: "function" as const,
     function: {
+      name: "list_parents",
+      description: "List all parent accounts in the center with their IDs. Call before choose_parent.",
+      parameters: { type: "object", properties: {}, required: [] as string[] },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "create_student",
-      description: "Create a new student in the center",
+      description: "Create a new student with a login account. Ask the user for name, username and password first. To attach a parent, pass parentId from list_parents or create_parent.",
       parameters: {
         type: "object",
         properties: {
           name: { type: "string", description: "Full name of the student" },
+          username: { type: "string", description: "Unique login username (lowercase letters, digits, _)" },
+          password: { type: "string", description: "Login password, at least 6 characters" },
           phone: { type: "string", description: "Student phone number (optional)" },
-          parentName: { type: "string", description: "Parent/guardian full name (optional)" },
-          parentPhone: { type: "string", description: "Parent/guardian phone number (optional)" },
+          birthDate: { type: "string", description: "Birth date YYYY-MM-DD (optional)" },
+          parentId: { type: "string", description: "Existing parent user ID from list_parents or create_parent (optional)" },
         },
-        required: ["name"] as string[],
+        required: ["name", "username", "password"] as string[],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "create_parent",
+      description: "Create a new parent account with a login. Ask the user for name, username and password first. Returns the parent ID to pass into create_student or choose_parent.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Full name of the parent" },
+          username: { type: "string", description: "Unique login username (lowercase letters, digits, _)" },
+          password: { type: "string", description: "Login password, at least 6 characters" },
+          phone: { type: "string", description: "Parent phone number (optional)" },
+        },
+        required: ["name", "username", "password"] as string[],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "choose_parent",
+      description: "Attach an existing parent to an existing student. Call list_parents and list_students first to get valid IDs.",
+      parameters: {
+        type: "object",
+        properties: {
+          studentId: { type: "string", description: "Student ID from list_students" },
+          parentId: { type: "string", description: "Parent user ID from list_parents" },
+        },
+        required: ["studentId", "parentId"] as string[],
       },
     },
   },
@@ -77,16 +186,16 @@ export const COPILOT_TOOLS = [
     type: "function" as const,
     function: {
       name: "create_teacher",
-      description: "Create a new teacher account. Username must be unique, lowercase.",
+      description: "Create a new teacher account with a login. Ask the user for name, username and password first.",
       parameters: {
         type: "object",
         properties: {
           name: { type: "string", description: "Full name" },
-          username: { type: "string", description: "Unique login username (lowercase, no spaces)" },
-          email: { type: "string", description: "Email address (optional)" },
+          username: { type: "string", description: "Unique login username (lowercase letters, digits, _)" },
+          password: { type: "string", description: "Login password, at least 6 characters" },
           phone: { type: "string", description: "Phone number (optional)" },
         },
-        required: ["name", "username"] as string[],
+        required: ["name", "username", "password"] as string[],
       },
     },
   },
@@ -216,35 +325,77 @@ export async function executeTool(
         name: c.name,
       }));
 
+    case "list_parents":
+      return snapshot.parents.map(p => ({
+        id: p.id,
+        name: p.name,
+        username: p.username,
+        phone: p.phone ?? null,
+      }));
+
     case "create_student": {
-      const studentData: any = {
+      const account = await createAccount({
+        centerId,
+        name: String(args.name),
+        username: String(args.username ?? ""),
+        password: String(args.password ?? ""),
+        role: "student",
+        phone: args.phone ? String(args.phone) : undefined,
+        parentId: args.parentId ? String(args.parentId) : undefined,
+        birthDate: args.birthDate ? String(args.birthDate) : undefined,
+      });
+      if ("error" in account) return account;
+
+      // Запись студента использует тот же UID, что и профиль — так их связывают журнал и оплаты.
+      return await repo.createStudent({
+        id: account.uid,
         centerId,
         name: String(args.name),
         groupIds: [],
-        avatarColor: pickColor(String(args.name)),
-      };
-      if (args.phone) studentData.phone = String(args.phone);
-      if (args.parentName) studentData.parentName = String(args.parentName);
-      if (args.parentPhone) studentData.parentPhone = String(args.parentPhone);
-      return await repo.createStudent(studentData);
+        avatarColor: account.avatarColor,
+        ...(args.phone ? { phone: String(args.phone) } : {}),
+        ...(args.parentId ? { parentId: String(args.parentId) } : {}),
+        ...(args.birthDate ? { birthDate: String(args.birthDate) } : {}),
+      });
+    }
+
+    case "create_parent": {
+      const account = await createAccount({
+        centerId,
+        name: String(args.name),
+        username: String(args.username ?? ""),
+        password: String(args.password ?? ""),
+        role: "parent",
+        phone: args.phone ? String(args.phone) : undefined,
+      });
+      if ("error" in account) return account;
+      return { id: account.uid, name: String(args.name), role: "parent" };
+    }
+
+    case "choose_parent": {
+      const studentId = String(args.studentId);
+      const parentId = String(args.parentId);
+      const student = snapshot.students.find(s => s.id === studentId);
+      if (!student) return { error: `Student "${studentId}" not found. Call list_students first.` };
+      const parent = snapshot.parents.find(p => p.id === parentId);
+      if (!parent) return { error: `Parent "${parentId}" not found. Call list_parents first.` };
+
+      // Раздел «Мои дети» у родителя строится по student.parentId (см. useCenterData).
+      await repo.updateStudent(centerId, studentId, { parentId });
+      return { studentId, studentName: student.name, parentId, parentName: parent.name };
     }
 
     case "create_teacher": {
-      const username = String(args.username).toLowerCase().trim();
-      const existing = await repo.getUserByLogin(username);
-      if (existing) {
-        return { error: `Username "${username}" is already taken. Choose a different one.` };
-      }
-      const teacherData: any = {
+      const account = await createAccount({
         centerId,
         name: String(args.name),
-        username,
+        username: String(args.username ?? ""),
+        password: String(args.password ?? ""),
         role: "teacher",
-        avatarColor: pickColor(String(args.name)),
-      };
-      if (args.email) teacherData.email = String(args.email);
-      if (args.phone) teacherData.phone = String(args.phone);
-      return await repo.createUser(teacherData);
+        phone: args.phone ? String(args.phone) : undefined,
+      });
+      if ("error" in account) return account;
+      return { id: account.uid, name: String(args.name), role: "teacher" };
     }
 
     case "create_room":
