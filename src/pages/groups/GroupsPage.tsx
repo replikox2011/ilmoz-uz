@@ -86,7 +86,7 @@ export function GroupsPage() {
     ? teachers.filter(t => !selectedCourse?.teacherIds?.length || selectedCourse.teacherIds.includes(t.id))
     : teachers;
   const availableRooms = form.courseId
-    ? rooms.filter(r => !selectedCourse?.rooms?.length || selectedCourse.rooms.includes(r.id))
+    ? rooms.filter(r => !selectedCourse?.rooms?.length || selectedCourse.rooms.includes(r.name) || selectedCourse.rooms.includes(r.id))
     : rooms;
 
   const filtered = React.useMemo(() => {
