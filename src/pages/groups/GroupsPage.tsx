@@ -82,12 +82,22 @@ export function GroupsPage() {
   const rooms = data.rooms ?? [];
 
   const selectedCourse = courses.find(c => c.id === form.courseId);
-  const availableTeachers = form.courseId
-    ? teachers.filter(t => !selectedCourse?.teacherIds?.length || selectedCourse.teacherIds.includes(t.id))
+  
+  const validTeacherIds = selectedCourse?.teacherIds?.filter(Boolean) || [];
+  let availableTeachers = form.courseId
+    ? teachers.filter(t => validTeacherIds.length === 0 || validTeacherIds.includes(t.id))
     : teachers;
-  const availableRooms = form.courseId
-    ? rooms.filter(r => !selectedCourse?.rooms?.length || selectedCourse.rooms.includes(r.name) || selectedCourse.rooms.includes(r.id))
+  if (availableTeachers.length === 0 && validTeacherIds.length > 0) {
+    availableTeachers = teachers; // fallback if mapped teachers don't exist
+  }
+    
+  const validRooms = selectedCourse?.rooms?.filter(Boolean) || [];
+  let availableRooms = form.courseId
+    ? rooms.filter(r => validRooms.length === 0 || validRooms.includes(r.name) || validRooms.includes(r.id))
     : rooms;
+  if (availableRooms.length === 0 && validRooms.length > 0) {
+    availableRooms = rooms; // fallback if mapped rooms don't exist (e.g. deleted or typo)
+  }
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
