@@ -79,6 +79,46 @@ export class FirestoreRepository implements Repository {
     await updateDoc(doc(db, "centers", centerId), strip(patch as any));
     return (await this.getCenter(centerId))!;
   }
+  async deleteCenter(centerId: string): Promise<void> {
+    // 1. Get center doc
+    const cSnap = await getDoc(doc(db, "centers", centerId));
+    if (cSnap.exists()) {
+      const cData = cSnap.data() as Center;
+      if (cData.subdomain) {
+        try {
+          await deleteDoc(doc(db, "subdomains", cData.subdomain));
+        } catch {}
+      }
+    }
+
+    // 2. Delete users belonging to this center
+    try {
+      const uSnap = await getDocs(query(collection(db, "userProfiles"), where("centerId", "==", centerId)));
+      for (const uDoc of uSnap.docs) {
+        const uData = uDoc.data() as User;
+        if (uData.username) {
+          try {
+            await deleteDoc(doc(db, "userLogins", uData.username.toLowerCase()));
+          } catch {}
+        }
+        await deleteDoc(doc(db, "userProfiles", uDoc.id));
+      }
+    } catch {}
+
+    // 3. Delete subcollections of center
+    const subcols = ["rooms", "courses", "groups", "students", "payments", "tests", "lessons"];
+    for (const colName of subcols) {
+      try {
+        const snap = await getDocs(collection(db, "centers", centerId, colName));
+        for (const d of snap.docs) {
+          await deleteDoc(doc(db, "centers", centerId, colName, d.id));
+        }
+      } catch {}
+    }
+
+    // 4. Delete center document
+    await deleteDoc(doc(db, "centers", centerId));
+  }
 
   // ── Networks (multi-branch) ────────────────────────────────────────────────
   async getNetwork(networkId: string) {
@@ -222,6 +262,48 @@ export class FirestoreRepository implements Repository {
 
     return user;
   }
+  async deleteUser(userId: string, centerId?: string): Promise<void> {
+    let docId = userId;
+    if (centerId) {
+      const candidateSnap = await getDoc(doc(db, "userProfiles", `${centerId}_${userId}`));
+      if (candidateSnap.exists()) {
+        docId = candidateSnap.id;
+      }
+    }
+    const snap = await getDoc(doc(db, "userProfiles", docId));
+    if (snap.exists()) {
+      const userData = snap.data() as User;
+      if (userData.username) {
+        try {
+          await deleteDoc(doc(db, "userLogins", userData.username.toLowerCase()));
+        } catch {}
+      }
+      await deleteDoc(doc(db, "userProfiles", docId));
+      const cId = centerId || userData.centerId;
+      if (cId) {
+        try {
+          await deleteDoc(doc(db, "centers", cId, "students", userId));
+        } catch {}
+      }
+    } else {
+      const qSnap = await getDocs(query(collection(db, "userProfiles"), where("id", "==", userId)));
+      for (const d of qSnap.docs) {
+        const uData = d.data() as User;
+        if (uData.username) {
+          try {
+            await deleteDoc(doc(db, "userLogins", uData.username.toLowerCase()));
+          } catch {}
+        }
+        await deleteDoc(doc(db, "userProfiles", d.id));
+        const cId = centerId || uData.centerId;
+        if (cId) {
+          try {
+            await deleteDoc(doc(db, "centers", cId, "students", userId));
+          } catch {}
+        }
+      }
+    }
+  }
   async hasAnyUser() {
     const s = await getDocs(query(collection(db, "userProfiles"), limit(1)));
     return !s.empty;
@@ -310,6 +392,12 @@ export class FirestoreRepository implements Repository {
   }
   async updateStudent(centerId: string, studentId: string, patch: Partial<Omit<Student, "id" | "centerId">>) {
     await updateDoc(doc(db, "centers", centerId, "students", studentId), strip(patch as any));
+  }
+  async deleteStudent(centerId: string, studentId: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, "centers", centerId, "students", studentId));
+    } catch {}
+    await this.deleteUser(studentId, centerId);
   }
 
   // ── Lessons ───────────────────────────────────────────────────────────────

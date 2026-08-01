@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   Search, Phone, Key, Calendar, Shield,
-  LayoutGrid, List, UserPlus, Lock, Eye, EyeOff,
+  LayoutGrid, List, UserPlus, Lock, Eye, EyeOff, Trash2,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -97,7 +97,7 @@ type AddFormValues = z.infer<typeof addSchema>;
 
 export function UsersPage() {
   const { t } = useI18n();
-  const { center } = useAuth();
+  const { center, user: currentUser } = useAuth();
   const data = useCenterData();
   const [query, setQuery] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<Role | "all">("all");
@@ -109,6 +109,22 @@ export function UsersPage() {
   const [saving, setSaving] = React.useState(false);
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [showPwd, setShowPwd] = React.useState(false);
+
+  const [deletingUser, setDeletingUser] = React.useState<any | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser || !center) return;
+    setDeleting(true);
+    try {
+      await repo.deleteUser(deletingUser.id, center.id);
+      setDeletingUser(null);
+    } catch (err: any) {
+      alert(err?.message ?? "Ошибка при удалении пользователя.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<AddFormValues>({
     resolver: zodResolver(addSchema),
@@ -369,11 +385,26 @@ export function UsersPage() {
       {viewMode === "cards" && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(u => (
-            <GlassCard key={u.id} interactive className="p-4">
+            <GlassCard key={u.id} interactive className="p-4 relative group">
               <div className="flex items-start gap-4">
                 <Avatar name={u.name} color={u.avatarColor} size="lg" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white">{u.name}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-semibold text-white">{u.name}</p>
+                    {u.id !== currentUser?.id && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingUser(u);
+                        }}
+                        title="Удалить пользователя"
+                        className="rounded-xl p-1 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                   <span className={cn("mt-1 inline-block rounded-xl px-2 py-0.5 text-[11px] font-semibold", ROLE_COLORS[u.role])}>
                     {t(`role.${u.role}`)}
                   </span>
@@ -424,6 +455,7 @@ export function UsersPage() {
                   <th className="px-4 py-3.5 text-left text-xs font-semibold text-white/40 uppercase tracking-wider hidden md:table-cell">Логин</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold text-white/40 uppercase tracking-wider hidden lg:table-cell">День рождения</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold text-white/40 uppercase tracking-wider hidden lg:table-cell">Регистрация</th>
+                  <th className="px-4 py-3.5 text-right text-xs font-semibold text-white/40 uppercase tracking-wider">Действия</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.05]">
@@ -446,11 +478,23 @@ export function UsersPage() {
                     </td>
                     <td className="px-4 py-3.5 text-white/50 hidden lg:table-cell">{fmtDate(u.birthDate)}</td>
                     <td className="px-4 py-3.5 text-white/50 hidden lg:table-cell">{fmtDate(u.createdAt)}</td>
+                    <td className="px-4 py-3.5 text-right">
+                      {u.id !== currentUser?.id && (
+                        <button
+                          type="button"
+                          onClick={() => setDeletingUser(u)}
+                          title="Удалить пользователя"
+                          className="rounded-xl p-1.5 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center text-sm text-white/40">Ничего не найдено</td>
+                    <td colSpan={7} className="py-16 text-center text-sm text-white/40">Ничего не найдено</td>
                   </tr>
                 )}
               </tbody>
@@ -458,6 +502,23 @@ export function UsersPage() {
           </div>
         </GlassCard>
       )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal
+        open={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        title="Удалить пользователя?"
+        description={`Вы действительно хотите удалить пользователя «${deletingUser?.name}»? Это действие нельзя отменить.`}
+      >
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="ghost" type="button" onClick={() => setDeletingUser(null)} disabled={deleting}>
+            Отмена
+          </Button>
+          <Button variant="danger" type="button" onClick={handleDeleteUser} loading={deleting}>
+            <Trash2 className="h-4 w-4 mr-1.5" /> Удалить
+          </Button>
+        </div>
+      </Modal>
 
       {/* ── Add User Modal ── */}
       <Modal

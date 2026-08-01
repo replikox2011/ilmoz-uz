@@ -83,10 +83,10 @@ export function GroupsPage() {
 
   const selectedCourse = courses.find(c => c.id === form.courseId);
   const availableTeachers = form.courseId
-    ? teachers.filter(t => selectedCourse?.teacherIds?.includes(t.id) ?? true)
+    ? teachers.filter(t => !selectedCourse?.teacherIds?.length || selectedCourse.teacherIds.includes(t.id))
     : teachers;
   const availableRooms = form.courseId
-    ? rooms.filter(r => selectedCourse?.rooms?.includes(r.id) ?? true)
+    ? rooms.filter(r => !selectedCourse?.rooms?.length || selectedCourse.rooms.includes(r.id))
     : rooms;
 
   const filtered = React.useMemo(() => {

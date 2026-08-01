@@ -1,7 +1,7 @@
 {
   "short_name": "Ilmoz",
-  "name": "Ilmoz EOS — Education Operating System",
-  "description": "O'quv markazlar uchun zamonaviy boshqaruv tizimi",
+  "name": "Ilmoz — O'quv markazlari uchun AI operatsion tizimi",
+  "description": "O'quv markazlari va ta'lim muassasalarini avtomatlashtirish uchun AI operatsion tizimi (LMS & CRM)",
   "icons": [
     {
       "src": "/logo.png",

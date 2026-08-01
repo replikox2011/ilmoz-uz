@@ -1,10 +1,12 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Search, RefreshCw, Users as UsersIcon, Building2 } from "lucide-react";
+import { Search, RefreshCw, Users as UsersIcon, Building2, Trash2 } from "lucide-react";
 import { firestoreRepository as repo } from "../../data/firestoreRepository";
 import { Center, User, Role, ROLE_LABELS } from "../../types";
 import { AdminHeader } from "./AdminLayout";
 import { Avatar } from "../../components/ui/Avatar";
+import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
 import { useI18n } from "../../i18n/I18nContext";
 import { cn } from "../../lib/utils";
 
@@ -28,6 +30,23 @@ export function AdminUsersPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [filter, setFilter] = React.useState<RoleFilter>("all");
   const [search, setSearch] = React.useState("");
+
+  const [deletingUser, setDeletingUser] = React.useState<User | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+    setDeleting(true);
+    try {
+      await repo.deleteUser(deletingUser.id, deletingUser.centerId);
+      setUsers((prev) => prev.filter((u) => u.id !== deletingUser.id));
+      setDeletingUser(null);
+    } catch (e: any) {
+      alert(e?.message ?? "Failed to delete user");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const FILTERS: { key: RoleFilter; label: string }[] = [
     { key: "all", label: t("admin.users.filterAll") },
@@ -158,13 +177,14 @@ export function AdminUsersPage() {
                 <th className="px-5 py-3 text-left text-xs font-medium text-white/40">{t("admin.table.role")}</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-white/40">{t("admin.table.center")}</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-white/40">{t("admin.users.contact")}</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-white/40">Действия</th>
               </tr>
             </thead>
             <tbody>
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i} className="border-b border-white/[0.04]">
-                      {Array.from({ length: 4 }).map((__, j) => (
+                      {Array.from({ length: 5 }).map((__, j) => (
                         <td key={j} className="px-5 py-3.5">
                           <div className="h-3 rounded-full bg-white/[0.05] animate-pulse" style={{ width: `${50 + j * 12}%` }} />
                         </td>
@@ -205,6 +225,16 @@ export function AdminUsersPage() {
                       <td className="px-5 py-3.5 text-xs text-white/45">
                         {u.email || u.phone || "—"}
                       </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setDeletingUser(u)}
+                          title="Удалить пользователя"
+                          className="rounded-xl p-1.5 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
             </tbody>
@@ -223,6 +253,23 @@ export function AdminUsersPage() {
           </p>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        title="Удалить пользователя?"
+        description={`Вы действительно хотите удалить пользователя «${deletingUser?.name}»? Это действие нельзя отменить.`}
+      >
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="ghost" type="button" onClick={() => setDeletingUser(null)} disabled={deleting}>
+            Отмена
+          </Button>
+          <Button variant="danger" type="button" onClick={handleDeleteUser} loading={deleting}>
+            <Trash2 className="h-4 w-4 mr-1.5" /> Удалить
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

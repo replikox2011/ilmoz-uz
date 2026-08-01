@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Building2, Mail, Phone, Shield, LogOut, GitBranch, ArrowRight } from "lucide-react";
+import { Building2, Mail, Phone, Shield, LogOut, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/Button";
 import { Input, Field } from "../../components/ui/Input";
 import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
+import { Modal } from "../../components/ui/Modal";
 import { LoginPageCustomizer } from "../../components/settings/LoginPageCustomizer";
 import { useI18n } from "../../i18n/I18nContext";
 
@@ -19,11 +20,15 @@ import { useI18n } from "../../i18n/I18nContext";
 const CAN_EDIT_CENTER: string[] = ["owner", "director"];
 
 export function SettingsPage() {
-  const { user, center, network, logout, setCenter } = useAuth();
+  const { user, center, logout, setCenter } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [savingCenter, setSavingCenter] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [confirmText, setConfirmText] = React.useState("");
+  const [deletingWorkspace, setDeletingWorkspace] = React.useState(false);
 
   const canEditCenter = !!user && CAN_EDIT_CENTER.includes(user.role);
 
@@ -58,6 +63,23 @@ export function SettingsPage() {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleDeleteWorkspace = async () => {
+    if (!center || !canEditCenter) return;
+    if (confirmText.trim().toLowerCase() !== center.name.trim().toLowerCase()) {
+      alert(`Iltimos, tasdiqlash uchun markaz nomini («${center.name}») to'g me'yorida kiriting.`);
+      return;
+    }
+    setDeletingWorkspace(true);
+    try {
+      await repo.deleteCenter(center.id);
+      await logout();
+      navigate("/login");
+    } catch (err: any) {
+      alert(err?.message ?? "Markazni o'chirishda xatolik yuz berdi.");
+      setDeletingWorkspace(false);
+    }
   };
 
   if (!user || !center) return null;
@@ -98,6 +120,7 @@ export function SettingsPage() {
             <Badge variant="neutral">{t("settings.readOnly")}</Badge>
           )}
         </div>
+
         <form onSubmit={handleSubmit(onSaveCenter)} className="space-y-4">
           <Field label={t("settings.centerName")} error={errors.name?.message}>
             <Input icon={<Building2 className="h-4 w-4" />} placeholder="Ilmoz Academy" disabled={!canEditCenter} {...register("name")} />
@@ -135,46 +158,70 @@ export function SettingsPage() {
         </div>
       </GlassCard>
 
-      {/* Network settings — owner only */}
-      {user.role === "owner" && (
-        <GlassCard className="p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="h-6 w-6 rounded-lg bg-brand-500/10 flex items-center justify-center">
-                  <GitBranch className="h-3.5 w-3.5 text-brand-400" />
-                </div>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-white">{t("nav.network")}</h2>
-              </div>
-              <p className="text-sm text-white/45">
-                {network 
-                  ? `${network.branchIds.length + 1} ta markazni bitta joydan boshqarish.`
-                  : "Yangi filiallar qo'shish va tarmog'ingizni kengaytirish."}
-              </p>
-            </div>
-            <Button onClick={() => navigate("/network")} variant="outline" className="shrink-0">
-              {network ? "Tarmoq paneli" : "Tarmoq yaratish"} <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </GlassCard>
-      )}
 
       {/* Login page customization — directors & owners only (branding = center identity) */}
       {canEditCenter && <LoginPageCustomizer />}
 
       {/* Danger zone */}
-      <GlassCard className="border-red-500/20 p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-red-400/70">{t("settings.sectionDangerZone")}</h2>
+      <GlassCard className="border-red-500/20 p-6 space-y-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-red-400/70">{t("settings.sectionDangerZone")}</h2>
+        
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-white">{t("settings.signOut")}</p>
             <p className="text-xs text-white/40">{t("settings.signOutDesc")}</p>
           </div>
-          <Button variant="danger" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" /> {t("settings.signOutBtn")}
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-1.5" /> {t("settings.signOutBtn")}
           </Button>
         </div>
+
+        {canEditCenter && (
+          <div className="border-t border-white/[0.06] pt-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-red-400">O'quv markazni o'chirish (Delete Workspace)</p>
+              <p className="text-xs text-white/40">Barcha ma'lumotlar (guruhlar, talabalar, to'lovlar) butunlay o'chib ketadi.</p>
+            </div>
+            <Button variant="danger" size="sm" onClick={() => setShowDeleteModal(true)}>
+              <Trash2 className="h-4 w-4 mr-1.5" /> Markazni o'chirish
+            </Button>
+          </div>
+        )}
       </GlassCard>
+
+      {/* Delete Workspace Confirmation Modal */}
+      <Modal
+        open={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setConfirmText(""); }}
+        title="O'quv markazni o'chirishni tasdiqlang"
+        description={`Siz haqiqatan ham «${center.name}» markazini va uning barcha ma'lumotlarini o'chirib tashlamoqchimisiz? Bu harakatni ortga qaytarib bo'lmaydi.`}
+      >
+        <div className="space-y-4 pt-2">
+          <Field label={`Tasdiqlash uchun markaz nomini kiriting: "${center.name}"`}>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={center.name}
+              autoFocus
+            />
+          </Field>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" type="button" onClick={() => { setShowDeleteModal(false); setConfirmText(""); }} disabled={deletingWorkspace}>
+              Bekor qilish
+            </Button>
+            <Button
+              variant="danger"
+              type="button"
+              onClick={handleDeleteWorkspace}
+              loading={deletingWorkspace}
+              disabled={confirmText.trim().toLowerCase() !== center.name.trim().toLowerCase()}
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" /> Butunlay o'chirish
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

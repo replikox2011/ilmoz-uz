@@ -1,10 +1,11 @@
 import * as React from "react";
-import { UserPlus, Search, Phone, Users, GraduationCap, Key, Lock, LayoutGrid, List, TableProperties } from "lucide-react";
+import { UserPlus, Search, Phone, Users, GraduationCap, Key, Lock, LayoutGrid, List, TableProperties, Trash2 } from "lucide-react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { secondaryAuth } from "../../lib/firebase";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Student } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
 import { useViewMode } from "../../hooks/useViewMode";
@@ -85,6 +86,22 @@ export function StudentsPage() {
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [showPwd, setShowPwd] = React.useState(false);
   const [viewMode, setViewMode] = useViewMode("students", "grid");
+
+  const [deletingStudent, setDeletingStudent] = React.useState<Student | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+
+  const handleDeleteStudent = async () => {
+    if (!deletingStudent || !center) return;
+    setDeleting(true);
+    try {
+      await repo.deleteStudent(center.id, deletingStudent.id);
+      setDeletingStudent(null);
+    } catch (err: any) {
+      alert(err?.message ?? "Ошибка при удалении ученика.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Realtime: useCenterData subscribes via onSnapshot, so data.students is always live.
   const students = data.students;
@@ -277,7 +294,25 @@ export function StudentsPage() {
               {filtered.map(s => {
                 const userRec = data.users.find(u => u.id === s.id);
                 return (
-                  <StudentGridCard key={s.id} student={s} groupCount={s.groupIds.length} username={userRec?.username} />
+                  <StudentGridCard
+                    key={s.id}
+                    student={s}
+                    groupCount={s.groupIds.length}
+                    username={userRec?.username}
+                    action={canManage ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingStudent(s);
+                        }}
+                        title="Удалить ученика"
+                        className="rounded-xl p-1.5 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : undefined}
+                  />
                 );
               })}
             </div>
@@ -288,7 +323,24 @@ export function StudentsPage() {
                 const userRec = data.users.find(u => u.id === s.id);
                 return (
                   <FadeItem key={s.id}>
-                    <StudentRow student={s} groupCount={s.groupIds.length} username={userRec?.username} />
+                    <StudentRow
+                      student={s}
+                      groupCount={s.groupIds.length}
+                      username={userRec?.username}
+                      action={canManage ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingStudent(s);
+                          }}
+                          title="Удалить ученика"
+                          className="rounded-xl p-1.5 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      ) : undefined}
+                    />
                   </FadeItem>
                 );
               })}
@@ -303,13 +355,32 @@ export function StudentsPage() {
                     <th className="pb-3 px-4 font-medium">{t("students.field.username")}</th>
                     <th className="pb-3 px-4 font-medium">{t("students.field.phone")}</th>
                     <th className="pb-3 px-4 font-medium">{t("students.field.groups")}</th>
+                    {canManage && <th className="pb-3 px-4 font-medium text-right">Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(s => {
                     const userRec = data.users.find(u => u.id === s.id);
                     return (
-                      <StudentTableRow key={s.id} student={s} groupCount={s.groupIds.length} username={userRec?.username} />
+                      <StudentTableRow
+                        key={s.id}
+                        student={s}
+                        groupCount={s.groupIds.length}
+                        username={userRec?.username}
+                        action={canManage ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingStudent(s);
+                            }}
+                            title="Удалить ученика"
+                            className="rounded-xl p-1.5 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        ) : undefined}
+                      />
                     );
                   })}
                 </tbody>
@@ -318,6 +389,23 @@ export function StudentsPage() {
           )}
         </GlassCard>
       )}
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!deletingStudent}
+        onClose={() => setDeletingStudent(null)}
+        title="Удалить ученика?"
+        description={`Вы действительно хотите удалить ученика «${deletingStudent?.name}»? Это действие нельзя отменить.`}
+      >
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="ghost" type="button" onClick={() => setDeletingStudent(null)} disabled={deleting}>
+            Отмена
+          </Button>
+          <Button variant="danger" type="button" onClick={handleDeleteStudent} loading={deleting}>
+            <Trash2 className="h-4 w-4 mr-1.5" /> Удалить
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={showModal}

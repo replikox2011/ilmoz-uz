@@ -19,6 +19,7 @@ export interface Repository {
   getCenter(centerId: string): Promise<Center | null>;
   createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string; ownerEmail?: string }): Promise<Center>;
   updateCenter(centerId: string, patch: Partial<Omit<Center, "id">>): Promise<Center>;
+  deleteCenter(centerId: string): Promise<void>;
   isSubdomainAvailable(subdomain: string): Promise<boolean>;
   getSubdomainCenterId(subdomain: string): Promise<string | null>;
 
@@ -37,6 +38,7 @@ export interface Repository {
   getUserByLogin(login: string): Promise<User | null>;
   isPhoneUnique(phone: string, exceptUid?: string): Promise<boolean>;
   createUser(input: Omit<User, "id"> & { id?: string }): Promise<User>;
+  deleteUser(userId: string, centerId?: string): Promise<void>;
   /** True if at least one user exists on the whole platform (used for first-launch bootstrap). */
   hasAnyUser(): Promise<boolean>;
   /** True if a platform admin (isadm: true) already exists. */
@@ -64,6 +66,7 @@ export interface Repository {
   listStudents(centerId: string): Promise<Student[]>;
   createStudent(input: Omit<Student, "id"> & { id?: string }): Promise<Student>;
   updateStudent(centerId: string, studentId: string, patch: Partial<Omit<Student, "id" | "centerId">>): Promise<void>;
+  deleteStudent(centerId: string, studentId: string): Promise<void>;
 
   // Lessons (E-Journal)
   listLessons(centerId: string, groupId: string): Promise<Lesson[]>;

@@ -1,14 +1,16 @@
 import * as React from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Building2, Users, Globe, Calendar, DollarSign,
-  GraduationCap, UserSquare2, DoorOpen, BookOpen, Wallet, Save, RefreshCw,
+  GraduationCap, UserSquare2, DoorOpen, BookOpen, Wallet, Save, RefreshCw, Trash2,
 } from "lucide-react";
 import { firestoreRepository as repo } from "../../data/firestoreRepository";
 import { Center, User } from "../../types";
 import { AdminHeader } from "./AdminLayout";
 import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
 import { cn } from "../../lib/utils";
 
 type Tab = "overview" | "users";
@@ -35,6 +37,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ cla
 
 export function AdminCenterDetailPage() {
   const { centerId } = useParams<{ centerId: string }>();
+  const navigate = useNavigate();
   const [center, setCenter] = React.useState<Center | null>(null);
   const [users, setUsers] = React.useState<User[]>([]);
   const [counts, setCounts] = React.useState<CenterCounts | null>(null);
@@ -48,6 +51,21 @@ export function AdminCenterDetailPage() {
   const [editDesc, setEditDesc] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [savedMsg, setSavedMsg] = React.useState(false);
+
+  const [deletingCenter, setDeletingCenter] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+
+  const handleDeleteCenter = async () => {
+    if (!centerId) return;
+    setDeletingCenter(true);
+    try {
+      await repo.deleteCenter(centerId);
+      navigate("/ilmoz-admin/centers");
+    } catch (e: any) {
+      alert(e?.message ?? "Failed to delete center");
+      setDeletingCenter(false);
+    }
+  };
 
   const loadCenter = React.useCallback(async () => {
     if (!centerId) return;
@@ -253,6 +271,17 @@ export function AdminCenterDetailPage() {
                 </div>
               </div>
             ))}
+
+            {/* Danger Zone: Delete Center */}
+            <div className="xl:col-span-2 rounded-2xl border border-red-500/20 bg-red-500/[0.02] p-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-red-400">Delete Learning Center</p>
+                <p className="text-xs text-white/40">Permanently delete this center, all its users, groups, students, and financial records.</p>
+              </div>
+              <Button variant="danger" size="sm" onClick={() => setShowDeleteModal(true)}>
+                <Trash2 className="h-4 w-4 mr-1.5" /> Delete Center
+              </Button>
+            </div>
           </div>
         )}
 
@@ -327,6 +356,23 @@ export function AdminCenterDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Center Modal */}
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Learning Center?"
+        description={`Are you sure you want to permanently delete «${center.name}» (${center.id})? This action cannot be undone.`}
+      >
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="ghost" type="button" onClick={() => setShowDeleteModal(false)} disabled={deletingCenter}>
+            Cancel
+          </Button>
+          <Button variant="danger" type="button" onClick={handleDeleteCenter} loading={deletingCenter}>
+            <Trash2 className="h-4 w-4 mr-1.5" /> Delete Permanently
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

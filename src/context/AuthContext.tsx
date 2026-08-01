@@ -164,23 +164,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await setDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`), snap.data());
       }
 
-      const userCenter = await firestoreRepository.getCenter(profile.centerId);
+      const platformDummyCenter: Center = {
+        id: "platform",
+        name: "Ilmoz Platform",
+        slug: "platform",
+        currency: "USD",
+        createdAt: new Date().toISOString(),
+      };
+
+      const userCenter = (await firestoreRepository.getCenter(profile.centerId)) || (
+        (profile.isadm || profile.ismod || profile.centerId === "platform") ? platformDummyCenter : null
+      );
       if (!userCenter) return false;
 
-      // Scan and auto-set ownerEmail on any center that doesn't have it set yet
-      if (profile.role === "owner" && fb.email) {
-        firestoreRepository.adminListAllCenters().then(async (allCenters) => {
-          for (const c of allCenters) {
-            if (!c.ownerEmail) {
-              await firestoreRepository.updateCenter(c.id, { ownerEmail: fb.email!.toLowerCase() });
-            }
-          }
-        }).catch(() => {});
+      // Set ownerEmail on the owner's center if not set yet
+      if (profile.role === "owner" && fb.email && userCenter && !userCenter.ownerEmail) {
+        firestoreRepository.updateCenter(userCenter.id, { ownerEmail: fb.email.toLowerCase() }).catch(() => {});
       }
 
       let activeCenter = userCenter;
 
-      // Enforce tenant isolation, but allow network owners/members to access branch subdomains of the same network
+      // 1. Root domain restriction: non-owners (and non-platform admins) cannot sign in on the main domain.
+      // Automatically redirect them to their center's subdomain if configured, or block entry.
+      if (!resolvedSubdomainCenterId && profile.role !== "owner" && !profile.isadm) {
+        if (userCenter.subdomain) {
+          throw new Error(`wrong-center:${userCenter.id}`);
+        } else {
+          throw new Error("only-owner-root");
+        }
+      }
+
+      // 2. Enforce tenant isolation, but allow network owners/members to access branch subdomains of the same network
       if (resolvedSubdomainCenterId && profile.centerId !== resolvedSubdomainCenterId) {
         const subCenter = await firestoreRepository.getCenter(resolvedSubdomainCenterId);
         
@@ -269,6 +283,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setCenter(null);
             setFbUser(null);
           }
+        } else if (err?.message === "only-owner-root") {
+          await signOut(auth);
+          setUser(null);
+          setCenter(null);
+          setFbUser(null);
+          throw new Error("Asosiy saytdan faqat markaz egalari kirishlari mumkin. O'quvchilar va o'qituvchilar o'z markazining subdomenidan kirishlari kerak.");
         }
       }
       setLoading(false);

@@ -2,22 +2,29 @@ import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Phone, Calendar, Users, BookMarked,
-  UserCircle2, Clock, DollarSign,
+  UserCircle2, Clock, DollarSign, Trash2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
+import { firestoreRepository as repo } from "../../data/firestoreRepository";
+import { isStaff } from "../../lib/access";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Avatar } from "../../components/ui/Avatar";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
 import { Stagger, FadeItem } from "../../components/motion/Motion";
 import { formatMoney } from "../../lib/utils";
 
 export function StudentProfilePage() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { center } = useAuth();
+  const { center, user } = useAuth();
   const data = useCenterData();
+  const canManage = !!user && isStaff(user.role);
+
+  const [deleting, setDeleting] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
 
   // Resolve user profile by username
   const userProfile = React.useMemo(
@@ -60,6 +67,18 @@ export function StudentProfilePage() {
     .filter(p => p.status === "paid")
     .reduce((sum, p) => sum + (p.amount ?? 0), 0);
 
+  const handleDeleteStudent = async () => {
+    if (!student || !center) return;
+    setDeleting(true);
+    try {
+      await repo.deleteStudent(center.id, student.id);
+      navigate("/students");
+    } catch (err: any) {
+      alert(err?.message ?? "Ошибка при удалении ученика.");
+      setDeleting(false);
+    }
+  };
+
   if (data.loading) {
     return (
       <div className="space-y-4">
@@ -85,12 +104,24 @@ export function StudentProfilePage() {
   return (
     <div className="space-y-5">
       {/* Back */}
-      <button
-        onClick={() => navigate("/students")}
-        className="flex items-center gap-1.5 text-sm text-white/40 transition hover:text-white/70"
-      >
-        <ArrowLeft className="h-4 w-4" /> Все ученики
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate("/students")}
+          className="flex items-center gap-1.5 text-sm text-white/40 transition hover:text-white/70"
+        >
+          <ArrowLeft className="h-4 w-4" /> Все ученики
+        </button>
+
+        {canManage && (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1.5" /> Удалить ученика
+          </Button>
+        )}
+      </div>
 
       {/* Profile card */}
       <GlassCard className="p-5">
@@ -120,6 +151,23 @@ export function StudentProfilePage() {
           </div>
         </div>
       </GlassCard>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Удалить ученика?"
+        description={`Вы действительно хотите удалить ученика «${student.name}»? Это действие нельзя отменить.`}
+      >
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="ghost" type="button" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
+            Отмена
+          </Button>
+          <Button variant="danger" type="button" onClick={handleDeleteStudent} loading={deleting}>
+            <Trash2 className="h-4 w-4 mr-1.5" /> Удалить
+          </Button>
+        </div>
+      </Modal>
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Groups */}

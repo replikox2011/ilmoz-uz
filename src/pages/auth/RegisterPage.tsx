@@ -106,13 +106,14 @@ export function RegisterPage() {
     go("account");
   };
 
-  // ── Final submit ──────────────────────────────────────────────────────────
+  // ── Final submit ──────────────────────────
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     if (available === false) {
       setServerError("That subdomain is already taken. Please choose another.");
       return;
     }
+    
     try {
       await registerWithEmail(
         values.centerName, values.ownerName,

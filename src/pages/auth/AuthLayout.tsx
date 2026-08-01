@@ -97,7 +97,7 @@ export function AuthLayout({ children, centerBrand }: AuthLayoutProps) {
             </div>
 
           <p className="relative z-10 text-xs text-white/30">
-            © 2026 Ilmoz · Education Operating System
+            © 2026 Ilmoz · O'quv markazlari uchun AI operatsion tizimi
           </p>
         </div>
       )}

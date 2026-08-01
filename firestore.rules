@@ -2,57 +2,257 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Публичные коллекции (читаются до/без авторизации) ───────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Хелперы
+    //
+    //  ВАЖНО: get() по несуществующему документу роняет всю проверку, поэтому
+    //  каждый get() прикрыт exists(). Логические && и || вычисляются лениво —
+    //  порядок условий подобран так, чтобы обычный запрос стоил один exists().
+    //  Лимит Firestore — 10 обращений к документам на одну проверку.
+    // ═══════════════════════════════════════════════════════════════════════
 
-    // Индекс username → email (вход по никнейму)
+    function uid()      { return request.auth.uid; }
+    function signedIn() { return request.auth != null; }
+
+    function profilePath(cid) {
+      return /databases/$(database)/documents/userProfiles/$(cid + '_' + uid());
+    }
+
+    // Профиль в конкретном центре. Ключ композитный — userProfiles/{centerId}_{uid} —
+    // поэтому членство проверяется одним exists() без запроса.
+    function hasProfileIn(cid) { return exists(profilePath(cid)); }
+    function profileIn(cid)    { return get(profilePath(cid)).data; }
+
+    // Легаси-профиль с плоским ключом userProfiles/{uid}.
+    // AuthContext.loadProfile мигрирует такие документы на композитный ключ при чтении.
+    function legacyPath() {
+      return /databases/$(database)/documents/userProfiles/$(uid());
+    }
+
+    function hasLegacyIn(cid) {
+      return exists(legacyPath()) && get(legacyPath()).data.centerId == cid;
+    }
+
+    // Сотрудник платформы живёт на псевдо-центре "platform" (/setupforadmin2011).
+    // Флаг isadm у владельца обычного центра прав платформы НЕ даёт — ср. isPlatformAdmin().
+    function platformAdmin() {
+      return signedIn()
+             && hasProfileIn('platform')
+             && profileIn('platform').isadm == true;
+    }
+
+    function platformUser() {
+      return signedIn()
+             && hasProfileIn('platform')
+             && (profileIn('platform').isadm == true || profileIn('platform').ismod == true);
+    }
+
+    // Сеть филиалов: владелец сети и персонал головного центра работают с филиалами.
+    // Повторяет ветку isSameNetwork в AuthContext.loadProfile.
+    function networkIdOf(cid) {
+      return exists(/databases/$(database)/documents/centers/$(cid))
+             ? get(/databases/$(database)/documents/centers/$(cid)).data.get('networkId', '')
+             : '';
+    }
+
+    function networkAccess(cid) {
+      let nid = networkIdOf(cid);
+      let netPath = /databases/$(database)/documents/networks/$(nid);
+      return nid != ''
+             && exists(netPath)
+             && (get(netPath).data.ownerId == uid()
+                 || hasProfileIn(get(netPath).data.headquartersCenterId));
+    }
+
+    // ─── Членство в центре ────────────────────────────────────────────────
+    // Дёшево в типичном случае: свой центр — один exists().
+    // networkAccess проверяется последним: он дороже всего по обращениям к документам.
+    function member(cid) {
+      return signedIn()
+             && (hasProfileIn(cid) || hasLegacyIn(cid) || platformAdmin() || networkAccess(cid));
+    }
+
+    function roleIn(cid) {
+      return hasProfileIn(cid)
+             ? profileIn(cid).role
+             : (exists(legacyPath()) ? get(legacyPath()).data.role : '');
+    }
+
+    function staff(cid) {
+      return signedIn()
+             && (roleIn(cid) in ['owner', 'director', 'administrator'] || platformAdmin());
+    }
+
+    function owner(cid) {
+      return signedIn() && (roleIn(cid) == 'owner' || platformAdmin());
+    }
+
+    // Поля, которые пользователь не может назначить себе сам.
+    // Без этого учитель делает updateDoc({ role: 'owner' }) и повышает себя.
+    function noPrivilegeEscalation() {
+      return !request.resource.data.diff(resource.data)
+                .affectedKeys()
+                .hasAny(['role', 'isadm', 'ismod', 'centerId', 'id']);
+    }
+
+    function noPlatformFlags() {
+      return request.resource.data.get('isadm', false) != true
+             && request.resource.data.get('ismod', false) != true;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Публичные коллекции (читаются до/без авторизации)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Индекс username → email (вход по нику). Читается до логина.
+    // create срабатывает только когда документа ещё нет — свободный ник занять можно,
+    // чужой перезаписать нельзя (иначе чужой логин уводится на подставной email).
     match /userLogins/{key} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read:   if true;
+      allow create: if signedIn();
+      allow update: if platformUser()
+                    || (signedIn() && resource.data.get('email', '') == request.auth.token.email);
+      allow delete: if platformUser()
+                    || (signedIn() && resource.data.get('email', '') == request.auth.token.email);
     }
 
-    // Субдомены — нужны до логина для определения тенанта
+    // Субдомены — нужны до логина для определения тенанта.
+    // Только захват свободного слота: занятый субдомен нельзя переписать на свой центр.
     match /subdomains/{subdomain} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read:   if true;
+      allow create: if signedIn();
+      allow update: if platformAdmin();
+      allow delete: if platformAdmin() || staff(resource.data.get('centerId', ''));
     }
 
-    // Документ центра (публичный) — LoginPage читает до авторизации для брендинга
-    // Содержит только: name, subdomain, logoUrl, loginTheme — ничего секретного
-    match /centers/{centerId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-
-      // Суб-коллекции с реальными данными — только авторизованные
-      match /rooms/{roomId}       { allow read, write: if request.auth != null; }
-      match /courses/{courseId}   { allow read, write: if request.auth != null; }
-      match /groups/{groupId}     { allow read, write: if request.auth != null; }
-      match /students/{studentId} { allow read, write: if request.auth != null; }
-      match /lessons/{lessonId}   { allow read, write: if request.auth != null; }
-      match /payments/{paymentId} { allow read, write: if request.auth != null; }
-      match /tests/{testId}       { allow read, write: if request.auth != null; }
-      match /testSubmissions/{submissionId} { allow read, write: if request.auth != null; }
-    }
-
-    // ─── Только авторизованные ────────────────────────────────────────────────
-
-    match /userProfiles/{userId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /featureFlags/{flagId}         { allow read, write: if request.auth != null; }
-    match /platformPlans/{planId}        { allow read, write: if request.auth != null; }
-    match /platformNews/{newsId}         { allow read, write: if request.auth != null; }
-    match /platformVersions/{versionId}  { allow read, write: if request.auth != null; }
-    match /platformPayments/{paymentId}  { allow read, write: if request.auth != null; }
-    match /platformCampaigns/{id}        { allow read, write: if request.auth != null; }
-    match /platformCoupons/{id}          { allow read, write: if request.auth != null; }
     match /platformConfig/{docId} {
-      // publicMeta stores { initialized: true } — readable without auth for SetupAdminPage check
-      allow read: if docId == "publicMeta" || request.auth != null;
-      allow write: if request.auth != null;
+      // publicMeta = { initialized: true } — читается без авторизации в SetupAdminPage
+      allow read:  if docId == 'publicMeta' || signedIn();
+      // publicMeta пишется один раз при создании первого админа платформы
+      allow write: if platformAdmin() || (docId == 'publicMeta' && signedIn());
     }
-    match /supportTickets/{ticketId}     { allow read, write: if request.auth != null; }
-    match /networks/{networkId}          { allow read, write: if request.auth != null; }
-    match /auditLogs/{logId}             { allow read, write: if request.auth != null; }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Центры и данные тенанта
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /centers/{centerId} {
+      // Документ центра публичен: LoginPage берёт брендинг до авторизации.
+      allow read: if true;
+      // Регистрация создаёт центр ДО профиля владельца — профиля ещё не существует.
+      allow create: if signedIn();
+      allow update: if staff(centerId);
+      allow delete: if owner(centerId);
+
+      // ─── Реальные данные: только свой центр ─────────────────────────────
+      match /rooms/{roomId}                 { allow read, write: if member(centerId); }
+      match /courses/{courseId}             { allow read, write: if member(centerId); }
+      match /groups/{groupId}               { allow read, write: if member(centerId); }
+      match /students/{studentId}           { allow read, write: if member(centerId); }
+      match /lessons/{lessonId}             { allow read, write: if member(centerId); }
+      match /tests/{testId}                 { allow read, write: if member(centerId); }
+      match /testSubmissions/{submissionId} { allow read, write: if member(centerId); }
+
+      // Финансы: студент видит свой баланс, но правит только персонал.
+      match /payments/{paymentId} {
+        allow read:  if member(centerId);
+        allow write: if staff(centerId);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Профили пользователей (верхний уровень, ключ {centerId}_{uid})
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /userProfiles/{docId} {
+      // Свой профиль — всегда; чужие — только внутри своего центра.
+      allow read: if signedIn()
+                  && (resource.data.get('id', '') == uid()
+                      || member(resource.data.get('centerId', '')));
+
+      // Персонал заводит учеников и сотрудников — только в своём центре.
+      allow create: if staff(request.resource.data.get('centerId', ''))
+                    && noPlatformFlags();
+
+      // Свой профиль создаётся легально в двух случаях:
+      //  1) регистрация/восстановление владельца — ownerEmail центра совпадает с email
+      //     (тот же путь, что и recovery-ветка в loadProfile);
+      //  2) миграция легаси-профиля на композитный ключ — центр берётся из старого документа.
+      // Иначе любой создал бы себе профиль с role:'owner' в чужом центре.
+      allow create: if signedIn()
+                    && request.resource.data.get('id', '') == uid()
+                    && noPlatformFlags()
+                    && (
+                         hasLegacyIn(request.resource.data.get('centerId', ''))
+                         || (
+                              exists(/databases/$(database)/documents/centers/$(request.resource.data.centerId))
+                              && get(/databases/$(database)/documents/centers/$(request.resource.data.centerId))
+                                   .data.get('ownerEmail', '') == request.auth.token.email
+                            )
+                       );
+
+      allow create: if platformAdmin();
+
+      // Свой профиль можно править, но не повышать себе права.
+      allow update: if signedIn()
+                    && resource.data.get('id', '') == uid()
+                    && noPrivilegeEscalation();
+
+      // Персонал правит профили своего центра; перенос в другой центр и выдача
+      // платформенных флагов запрещены.
+      allow update: if staff(resource.data.get('centerId', ''))
+                    && request.resource.data.get('centerId', '') == resource.data.get('centerId', '')
+                    && noPlatformFlags();
+
+      allow update: if platformAdmin();
+
+      allow delete: if platformAdmin() || staff(resource.data.get('centerId', ''));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Сети филиалов
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /networks/{networkId} {
+      allow read:   if platformUser()
+                    || (signedIn()
+                        && (resource.data.get('ownerId', '') == uid()
+                            || hasProfileIn(resource.data.get('headquartersCenterId', ''))));
+      allow create: if signedIn() && request.resource.data.get('ownerId', '') == uid();
+      allow update, delete: if platformAdmin()
+                            || (signedIn() && resource.data.get('ownerId', '') == uid());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Платформенные коллекции — читают все свои, пишет платформа
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /featureFlags/{flagId}        { allow read: if signedIn(); allow write: if platformAdmin(); }
+    match /platformPlans/{planId}       { allow read: if signedIn(); allow write: if platformAdmin(); }
+    match /platformNews/{newsId}        { allow read: if signedIn(); allow write: if platformUser(); }
+    match /platformVersions/{versionId} { allow read: if signedIn(); allow write: if platformAdmin(); }
+    match /platformCampaigns/{id}       { allow read, write: if platformUser(); }
+    match /platformCoupons/{id}         { allow read: if signedIn(); allow write: if platformUser(); }
+
+    // Платежи центров за подписку Ilmoz — центр видит только свои.
+    match /platformPayments/{paymentId} {
+      allow read:  if platformUser() || staff(resource.data.get('centerId', ''));
+      allow write: if platformAdmin();
+    }
+
+    // Тикеты поддержки — свой центр либо платформа.
+    match /supportTickets/{ticketId} {
+      allow read:   if platformUser() || member(resource.data.get('centerId', ''));
+      allow create: if signedIn();
+      allow update: if platformUser() || staff(resource.data.get('centerId', ''));
+      allow delete: if platformUser();
+    }
+
+    // Журнал аудита: дописывать можно, переписывать и стирать — нет.
+    match /auditLogs/{logId} {
+      allow read:   if platformUser();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
   }
 }

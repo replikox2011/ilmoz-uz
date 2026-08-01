@@ -74,6 +74,18 @@ export class MockRepository implements Repository {
     db.centers[idx] = Object.assign({}, db.centers[idx], patch);
     save(db); return delay(db.centers[idx]);
   }
+  async deleteCenter(centerId: string) {
+    const db = load();
+    db.centers = db.centers.filter(c => c.id !== centerId);
+    db.users = db.users.filter(u => u.centerId !== centerId);
+    db.students = db.students.filter(s => s.centerId !== centerId);
+    db.groups = db.groups.filter(g => g.centerId !== centerId);
+    db.rooms = db.rooms.filter(r => r.centerId !== centerId);
+    db.courses = db.courses.filter(c => c.centerId !== centerId);
+    db.payments = db.payments.filter(p => p.centerId !== centerId);
+    db.tests = (db.tests || []).filter(t => t.centerId !== centerId);
+    save(db); return delay(undefined as void);
+  }
 
   // Networks
   async getNetwork(id: string) { return delay(load().networks.find(n => n.id === id) || null); }
@@ -103,6 +115,16 @@ export class MockRepository implements Repository {
     const { id: providedId, ...rest } = input as any;
     const user: User = { id: providedId ?? uid("u"), ...rest };
     db.users.push(user); save(db); return delay(user);
+  }
+  async deleteUser(userId: string, centerId?: string) {
+    const db = load();
+    db.users = db.users.filter(u => u.id !== userId);
+    if (centerId) {
+      db.students = db.students.filter(s => !(s.id === userId && s.centerId === centerId));
+    } else {
+      db.students = db.students.filter(s => s.id !== userId);
+    }
+    save(db); return delay(undefined as void);
   }
   async hasAnyUser() { return delay(load().users.length > 0); }
   async hasAnyAdmin() { return delay(load().users.some((u: any) => u.isadm)); }
@@ -158,6 +180,12 @@ export class MockRepository implements Repository {
   async updateStudent(centerId: string, studentId: string, patch: Partial<Omit<Student, "id" | "centerId">>) {
     const db = load();
     db.students = db.students.map(s => s.id === studentId && s.centerId === centerId ? { ...s, ...patch } : s);
+    save(db); return delay(undefined as void);
+  }
+  async deleteStudent(centerId: string, studentId: string) {
+    const db = load();
+    db.students = db.students.filter(s => !(s.id === studentId && s.centerId === centerId));
+    db.users = db.users.filter(u => !(u.id === studentId && u.centerId === centerId));
     save(db); return delay(undefined as void);
   }
 
