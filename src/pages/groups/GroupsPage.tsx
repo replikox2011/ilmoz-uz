@@ -80,7 +80,7 @@ export function GroupsPage() {
   const localGroups = data.groups;
   const teachers = data.teachers ?? [];
   const courses = data.courses ?? [];
-  const rooms = data.rooms ?? [];
+  const rooms = React.useMemo(() => data.rooms ?? [], [data.rooms]);
 
   const selectedCourse = courses.find(c => c.id === form.courseId);
   
