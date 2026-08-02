@@ -11,6 +11,7 @@ import { cn } from "../../lib/utils";
 import { useI18n } from "../../i18n/I18nContext";
 import { CenterSnapshot } from "../../components/copilot/copilotTools";
 import { buildNexoPrompt } from "./nexo-prompt";
+import DOMPurify from "dompurify";
 
 // =============================================================================
 export function CopilotPage() {
@@ -388,10 +389,10 @@ function MessageContent({ content }: { content: string }) {
           <span key={i}>
             {isBullet || isNumbered ? (
               <span className={cn("block", i > 0 && "mt-1", isBullet && "pl-3 before:content-['•'] before:mr-2 before:text-brand-300")}>
-                <span dangerouslySetInnerHTML={{ __html: isBullet ? formatted.replace(/^[-*•]\s/, "") : formatted }} />
+                <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(isBullet ? formatted.replace(/^[-*•]\s/, "") : formatted) }} />
               </span>
             ) : (
-              <span className={cn(i > 0 && line === "" && "block h-2")} dangerouslySetInnerHTML={{ __html: formatted }} />
+              <span className={cn(i > 0 && line === "" && "block h-2")} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted) }} />
             )}
           </span>
         );

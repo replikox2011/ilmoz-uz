@@ -44,7 +44,6 @@ import { AdminMaintenancePage } from "./pages/ilmoz-admin/AdminMaintenancePage";
 import { AdminSecurityPage } from "./pages/ilmoz-admin/AdminSecurityPage";
 import { AdminSettingsPage } from "./pages/ilmoz-admin/AdminSettingsPage";
 import { CustomizeLoginPage } from "./pages/onboarding/CustomizeLoginPage";
-import { SetupAdminPage } from "./pages/admin/SetupAdminPage";
 import { LandingPage } from "./pages/landing/LandingPage";
 import { AdminRootProvider } from "./pages/ilmoz-admin/AdminRootContext";
 import { buildSubdomainUrl } from "./lib/subdomain";
@@ -288,7 +287,6 @@ export default function App() {
         <Route path="/setup"    element={<SetupOnly><SetupCenterPage /></SetupOnly>} />
         <Route path="/verify-phone" element={<VerifyOnly><VerifyPhonePage /></VerifyOnly>} />
         <Route path="/onboarding/customize" element={<CustomizeOnly><CustomizeLoginPage /></CustomizeOnly>} />
-        <Route path="/setupforadmin2011" element={<SetupAdminPage />} />
         <Route path="/landing" element={<LandingRoute />} />
 
         {/* ── Root shell — isadm gets AdminLayout, everyone else gets AppShell ── */}

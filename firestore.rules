@@ -47,8 +47,8 @@ service cloud.firestore {
              && (profileIn('platform').isadm == true || profileIn('platform').ismod == true);
     }
 
-    // Сеть филиалов: владелец сети и персонал головного центра работают с филиалами.
-    // Повторяет ветку isSameNetwork в AuthContext.loadProfile.
+    // Сеть филиалов: владелец сети и ПЕРСОНАЛ головного центра работают с филиалами.
+    // Только staff HQ-центра получает сетевой доступ (учителя и студенты — нет).
     function networkIdOf(cid) {
       return exists(/databases/$(database)/documents/centers/$(cid))
              ? get(/databases/$(database)/documents/centers/$(cid)).data.get('networkId', '')
@@ -58,10 +58,12 @@ service cloud.firestore {
     function networkAccess(cid) {
       let nid = networkIdOf(cid);
       let netPath = /databases/$(database)/documents/networks/$(nid);
+      let hqCid = get(netPath).data.headquartersCenterId;
       return nid != ''
              && exists(netPath)
              && (get(netPath).data.ownerId == uid()
-                 || hasProfileIn(get(netPath).data.headquartersCenterId));
+                 || (hasProfileIn(hqCid)
+                     && profileIn(hqCid).role in ['owner', 'director', 'administrator']));
     }
 
     // ─── Членство в центре ────────────────────────────────────────────────
@@ -83,8 +85,18 @@ service cloud.firestore {
              && (roleIn(cid) in ['owner', 'director', 'administrator'] || platformAdmin());
     }
 
+    function teacher(cid) {
+      return signedIn()
+             && (roleIn(cid) in ['owner', 'director', 'administrator', 'teacher'] || platformAdmin());
+    }
+
     function owner(cid) {
       return signedIn() && (roleIn(cid) == 'owner' || platformAdmin());
+    }
+
+    // Допустимые роли — для валидации при создании профиля.
+    function isValidRole(role) {
+      return role in ['owner', 'director', 'administrator', 'teacher', 'student', 'parent'];
     }
 
     // Поля, которые пользователь не может назначить себе сам.
@@ -105,11 +117,12 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Индекс username → email (вход по нику). Читается до логина.
-    // create срабатывает только когда документа ещё нет — свободный ник занять можно,
-    // чужой перезаписать нельзя (иначе чужой логин уводится на подставной email).
+    // create: email в документе ДОЛЖЕН совпадать с email автора — иначе
+    // можно захватить чужой username, привязав его к подставному email.
     match /userLogins/{key} {
       allow read:   if true;
-      allow create: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.get('email', '') == request.auth.token.email;
       allow update: if platformUser()
                     || (signedIn() && resource.data.get('email', '') == request.auth.token.email);
       allow delete: if platformUser()
@@ -117,19 +130,27 @@ service cloud.firestore {
     }
 
     // Субдомены — нужны до логина для определения тенанта.
-    // Только захват свободного слота: занятый субдомен нельзя переписать на свой центр.
+    // create: только владелец центра может привязать субдомен.
+    // update/delete: только владелец этого центра или платформа.
     match /subdomains/{subdomain} {
       allow read:   if true;
-      allow create: if signedIn();
-      allow update: if platformAdmin();
-      allow delete: if platformAdmin() || staff(resource.data.get('centerId', ''));
+      allow create: if signedIn()
+                    && request.resource.data.get('centerId', '') != ''
+                    && owner(request.resource.data.get('centerId', ''));
+      allow update: if platformAdmin()
+                    || owner(resource.data.get('centerId', ''));
+      allow delete: if platformAdmin()
+                    || owner(resource.data.get('centerId', ''));
     }
 
     match /platformConfig/{docId} {
       // publicMeta = { initialized: true } — читается без авторизации в SetupAdminPage
       allow read:  if docId == 'publicMeta' || signedIn();
-      // publicMeta пишется один раз при создании первого админа платформы
-      allow write: if platformAdmin() || (docId == 'publicMeta' && signedIn());
+      // publicMeta: только create (один раз при инициализации), update/delete — только platformAdmin.
+      // Это закрывает race condition: нельзя удалить publicMeta и пересоздать admin.
+      allow create: if platformAdmin()
+                    || (docId == 'publicMeta' && signedIn());
+      allow update, delete: if platformAdmin();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -140,22 +161,69 @@ service cloud.firestore {
       // Документ центра публичен: LoginPage берёт брендинг до авторизации.
       allow read: if true;
       // Регистрация создаёт центр ДО профиля владельца — профиля ещё не существует.
-      allow create: if signedIn();
+      // Валидация: ownerEmail ДОЛЖЕН совпадать с email создателя.
+      allow create: if signedIn()
+                    && request.resource.data.get('ownerEmail', '') == request.auth.token.email;
       allow update: if staff(centerId);
       allow delete: if owner(centerId);
 
-      // ─── Реальные данные: только свой центр ─────────────────────────────
-      match /rooms/{roomId}                 { allow read, write: if member(centerId); }
-      match /courses/{courseId}             { allow read, write: if member(centerId); }
-      match /groups/{groupId}               { allow read, write: if member(centerId); }
-      match /students/{studentId}           { allow read, write: if member(centerId); }
-      match /lessons/{lessonId}             { allow read, write: if member(centerId); }
-      match /tests/{testId}                 { allow read, write: if member(centerId); }
-      match /testSubmissions/{submissionId} { allow read, write: if member(centerId); }
+      // ─── Данные тенанта: разделение по ролям ────────────────────────────
+      // Читать могут все member'ы центра.
+      // Писать (create/update/delete) — только персонал (staff).
+      // Это закрывает уязвимость: студент/учитель/родитель больше не могут
+      // удалять или изменять комнаты, курсы, группы и т.д.
 
-      // Финансы: студент видит свой баланс, но правит только персонал.
+      match /rooms/{roomId} {
+        allow read:   if member(centerId);
+        allow write:  if staff(centerId);
+      }
+
+      match /courses/{courseId} {
+        allow read:   if member(centerId);
+        allow write:  if staff(centerId);
+      }
+
+      match /groups/{groupId} {
+        allow read:   if member(centerId);
+        allow write:  if staff(centerId);
+      }
+
+      match /students/{studentId} {
+        allow read:   if member(centerId);
+        allow write:  if staff(centerId);
+      }
+
+      // Уроки: читают все member'ы, создают и обновляют учителя+, удаляют staff.
+      match /lessons/{lessonId} {
+        allow read:   if member(centerId);
+        allow create: if teacher(centerId);
+        allow update: if teacher(centerId);
+        allow delete: if staff(centerId);
+      }
+
+      // Тесты: создают и редактируют учителя+, читают все member'ы.
+      match /tests/{testId} {
+        allow read:   if member(centerId);
+        allow create: if teacher(centerId);
+        allow update: if teacher(centerId);
+        allow delete: if staff(centerId);
+      }
+
+      // Ответы на тесты: студент может создать свой ответ, читать — member'ы.
+      // Обновлять (оценка) — учителя+, удалять — staff.
+      match /testSubmissions/{submissionId} {
+        allow read:   if member(centerId);
+        allow create: if member(centerId);
+        allow update: if teacher(centerId);
+        allow delete: if staff(centerId);
+      }
+
+      // Финансы: студент видит свой баланс (фильтрация по studentId),
+      // персонал видит все платежи. Пишет только персонал.
       match /payments/{paymentId} {
-        allow read:  if member(centerId);
+        allow read:  if staff(centerId)
+                     || (member(centerId)
+                         && resource.data.get('studentId', '') == uid());
         allow write: if staff(centerId);
       }
     }
@@ -171,23 +239,33 @@ service cloud.firestore {
                       || member(resource.data.get('centerId', '')));
 
       // Персонал заводит учеников и сотрудников — только в своём центре.
+      // Закрыто: staff не может назначить role='owner' (только owner или platformAdmin).
+      // Закрыто: docId ДОЛЖЕН совпадать с форматом {centerId}_{uid}.
       allow create: if staff(request.resource.data.get('centerId', ''))
-                    && noPlatformFlags();
+                    && noPlatformFlags()
+                    && isValidRole(request.resource.data.get('role', ''))
+                    && (request.resource.data.get('role', '') != 'owner'
+                        || owner(request.resource.data.get('centerId', '')))
+                    && docId == (request.resource.data.get('centerId', '') + '_' + request.resource.data.get('id', ''));
 
       // Свой профиль создаётся легально в двух случаях:
-      //  1) регистрация/восстановление владельца — ownerEmail центра совпадает с email
-      //     (тот же путь, что и recovery-ветка в loadProfile);
-      //  2) миграция легаси-профиля на композитный ключ — центр берётся из старого документа.
-      // Иначе любой создал бы себе профиль с role:'owner' в чужом центре.
+      //  1) регистрация/восстановление владельца — ownerEmail центра совпадает с email;
+      //  2) миграция легаси-профиля на композитный ключ — роль берётся из старого документа.
+      // Закрыто: при миграции роль ДОЛЖНА совпадать с легаси-профилем.
+      // Закрыто: при ownerEmail — роль должна быть 'owner'.
       allow create: if signedIn()
                     && request.resource.data.get('id', '') == uid()
                     && noPlatformFlags()
+                    && isValidRole(request.resource.data.get('role', ''))
+                    && docId == (request.resource.data.get('centerId', '') + '_' + uid())
                     && (
-                         hasLegacyIn(request.resource.data.get('centerId', ''))
+                         (hasLegacyIn(request.resource.data.get('centerId', ''))
+                          && request.resource.data.get('role', '') == get(legacyPath()).data.role)
                          || (
                               exists(/databases/$(database)/documents/centers/$(request.resource.data.centerId))
                               && get(/databases/$(database)/documents/centers/$(request.resource.data.centerId))
                                    .data.get('ownerEmail', '') == request.auth.token.email
+                              && request.resource.data.get('role', '') == 'owner'
                             )
                        );
 
@@ -199,14 +277,16 @@ service cloud.firestore {
                     && noPrivilegeEscalation();
 
       // Персонал правит профили своего центра; перенос в другой центр и выдача
-      // платформенных флагов запрещены.
+      // платформенных флагов запрещены. Staff не может повышать до owner.
       allow update: if staff(resource.data.get('centerId', ''))
                     && request.resource.data.get('centerId', '') == resource.data.get('centerId', '')
-                    && noPlatformFlags();
+                    && noPlatformFlags()
+                    && (request.resource.data.get('role', '') != 'owner'
+                        || owner(resource.data.get('centerId', '')));
 
       allow update: if platformAdmin();
 
-      allow delete: if platformAdmin() || staff(resource.data.get('centerId', ''));
+      allow delete: if platformAdmin() || owner(resource.data.get('centerId', ''));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -248,10 +328,12 @@ service cloud.firestore {
       allow delete: if platformUser();
     }
 
-    // Журнал аудита: дописывать можно, переписывать и стирать — нет.
+    // Журнал аудита: дописывать можно (с валидацией), переписывать и стирать — нет.
+    // userId ДОЛЖЕН совпадать с uid автора — нельзя подделать запись от чужого имени.
     match /auditLogs/{logId} {
       allow read:   if platformUser();
-      allow create: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.get('userId', '') == uid();
       allow update, delete: if false;
     }
   }

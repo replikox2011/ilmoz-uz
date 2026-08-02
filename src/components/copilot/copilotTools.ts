@@ -33,8 +33,8 @@ async function createAccount(input: {
   if (!/^[a-z0-9_]+$/.test(username)) {
     return { error: `Username "${username}" is invalid. Use lowercase letters, digits and _ only.` };
   }
-  if (input.password.length < 6) {
-    return { error: "Password must be at least 6 characters." };
+  if (input.password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
   }
   if (await repo.getUserByLogin(username)) {
     return { error: `Username "${username}" is already taken. Choose a different one.` };
@@ -281,6 +281,17 @@ export async function executeTool(
   centerId: string,
   snapshot: CenterSnapshot,
 ): Promise<any> {
+  const currentUserId = snapshot.currentUserId;
+  const isStaff = () => {
+    // But we don't have the user role directly in the snapshot if they are owner/director. 
+    // Wait, teachers array includes all staff users in useCenterData.ts. Let's check it.
+    const currentUser = snapshot.teachers.find(t => t.id === currentUserId);
+    return currentUser && ["owner", "director", "administrator", "teacher"].includes(currentUser.role);
+  };
+  const requireStaff = () => {
+    if (!isStaff()) throw new Error("Permission denied: You must be a staff member to perform this action.");
+  };
+
   switch (name) {
     case "list_groups":
       return snapshot.groups.map(g => ({
@@ -334,6 +345,7 @@ export async function executeTool(
       }));
 
     case "create_student": {
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       const account = await createAccount({
         centerId,
         name: String(args.name),
@@ -360,6 +372,7 @@ export async function executeTool(
     }
 
     case "create_parent": {
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       const account = await createAccount({
         centerId,
         name: String(args.name),
@@ -373,6 +386,7 @@ export async function executeTool(
     }
 
     case "choose_parent": {
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       const studentId = String(args.studentId);
       const parentId = String(args.parentId);
       const student = snapshot.students.find(s => s.id === studentId);
@@ -386,6 +400,7 @@ export async function executeTool(
     }
 
     case "create_teacher": {
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       const account = await createAccount({
         centerId,
         name: String(args.name),
@@ -399,12 +414,14 @@ export async function executeTool(
     }
 
     case "create_room":
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       return await repo.createRoom({
         centerId,
         name: String(args.name),
       });
 
     case "create_course":
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       return await repo.createCourse({
         centerId,
         name: String(args.name),
@@ -413,6 +430,7 @@ export async function executeTool(
       });
 
     case "create_group":
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
       return await repo.createGroup({
         centerId,
         name: String(args.name),

@@ -203,10 +203,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userCenter.networkId &&
           subCenter.networkId === userCenter.networkId;
 
-        if (!isSameNetwork && profile.role !== "owner") {
+        if (!isSameNetwork) {
           throw new Error(`wrong-center:${profile.centerId}`);
         } else if (subCenter) {
-          // If in the same network or the user is the owner, set activeCenter to the branch subdomain center
+          // If in the same network, set activeCenter to the branch subdomain center
           activeCenter = subCenter;
         }
       }
@@ -317,8 +317,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // to querying userProfiles (requires permissive Firestore rules).
     const profile = await firestoreRepository.getUserByLogin(raw);
     if (!profile?.email) {
-      const err: any = new Error("Пользователь не найден. Попробуйте войти через email.");
-      err.code = "auth/user-not-found";
+      const err: any = new Error("Неверный логин или пароль.");
+      err.code = "auth/invalid-credential";
       throw err;
     }
     await signInWithEmailAndPassword(auth, profile.email, password);
@@ -418,6 +418,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    if (user?.id) localStorage.removeItem(`ilmoz:copilot:history:${user.id}`);
     await signOut(auth);
     setUser(null);
     setCenter(null);
@@ -429,6 +430,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logoutToMain = async () => {
+    if (user?.id) localStorage.removeItem(`ilmoz:copilot:history:${user.id}`);
     await signOut(auth);
     setUser(null);
     setCenter(null);

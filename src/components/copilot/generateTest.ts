@@ -31,9 +31,6 @@ export async function generateTestWithWebSearch(
   questionCount: number,
   mcqCount: number,
 ): Promise<GeneratedTest> {
-  const apiKey = process.env.REACT_APP_OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("REACT_APP_OPENROUTER_API_KEY is not configured");
-
   const shortCount = Math.max(0, questionCount - mcqCount);
 
   const prompt = [
@@ -45,15 +42,13 @@ export async function generateTestWithWebSearch(
     `Ответь СТРОГО в виде JSON объекта вида { "questions": [...] } без каких-либо пояснений вокруг.`,
   ].join(" ");
 
-  const resp = await fetch(OPENROUTER_URL, {
+  const resp = await fetch("/api/copilot", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://nexo-eos.app",
-      "X-Title": "NexoGPT",
     },
     body: JSON.stringify({
+      provider: "openrouter",
       model: "nvidia/nemotron-3-ultra-550b-a55b:free",
       messages: [
         {
