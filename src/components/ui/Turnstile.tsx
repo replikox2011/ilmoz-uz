@@ -26,10 +26,12 @@ const SITE_KEY = isLocalhost ? TEST_SITE_KEY : REAL_SITE_KEY;
 
 interface TurnstileProps {
   onVerify: (token: string | null) => void;
+  /** Called when the widget cannot load or render at all, so the page can stop blocking submit. */
+  onError?: () => void;
   theme?: "light" | "dark" | "auto";
 }
 
-export function Turnstile({ onVerify, theme = "dark" }: TurnstileProps) {
+export function Turnstile({ onVerify, onError, theme = "dark" }: TurnstileProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const widgetIdRef = React.useRef<string | null>(null);
 
@@ -37,16 +39,25 @@ export function Turnstile({ onVerify, theme = "dark" }: TurnstileProps) {
     let active = true;
     let checkInterval: NodeJS.Timeout;
 
+    const removeWidget = () => {
+      if (!widgetIdRef.current || !window.turnstile) return;
+      const id = widgetIdRef.current;
+      // Null the ref before remove() so a throw here can never make the next
+      // render() call bail out on a stale id.
+      widgetIdRef.current = null;
+      try {
+        window.turnstile.remove(id);
+      } catch {
+        // widget already gone
+      }
+    };
+
     const renderWidget = () => {
       if (!containerRef.current || !window.turnstile) return;
 
-      try {
-        // Clear previous widget if any
-        if (widgetIdRef.current) {
-          window.turnstile.remove(widgetIdRef.current);
-          widgetIdRef.current = null;
-        }
+      removeWidget();
 
+      try {
         const id = window.turnstile.render(containerRef.current, {
           sitekey: SITE_KEY,
           theme: theme,
@@ -63,6 +74,7 @@ export function Turnstile({ onVerify, theme = "dark" }: TurnstileProps) {
         widgetIdRef.current = id;
       } catch (err) {
         console.error("Turnstile render error:", err);
+        if (active) onError?.();
       }
     };
 
@@ -70,10 +82,18 @@ export function Turnstile({ onVerify, theme = "dark" }: TurnstileProps) {
     if (window.turnstile) {
       renderWidget();
     } else {
+      let waited = 0;
       checkInterval = setInterval(() => {
         if (window.turnstile) {
           clearInterval(checkInterval);
           if (active) renderWidget();
+          return;
+        }
+        waited += 100;
+        if (waited >= 10000) {
+          clearInterval(checkInterval);
+          console.error("Turnstile script failed to load");
+          if (active) onError?.();
         }
       }, 100);
     }
@@ -81,15 +101,9 @@ export function Turnstile({ onVerify, theme = "dark" }: TurnstileProps) {
     return () => {
       active = false;
       if (checkInterval) clearInterval(checkInterval);
-      if (widgetIdRef.current && window.turnstile) {
-        try {
-          window.turnstile.remove(widgetIdRef.current);
-        } catch (e) {
-          // ignore
-        }
-      }
+      removeWidget();
     };
-  }, [onVerify, theme]);
+  }, [onVerify, onError, theme]);
 
   return (
     <div className="flex justify-center my-4">

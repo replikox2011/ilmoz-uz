@@ -17,6 +17,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [centerBrand, setCenterBrand] = React.useState<Center | null>(null);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
+  const [captchaBroken, setCaptchaBroken] = React.useState(false);
+  const handleCaptchaError = React.useCallback(() => setCaptchaBroken(true), []);
 
   React.useEffect(() => {
     if (!subdomainCenterId) return;
@@ -30,8 +32,8 @@ export function LoginPage() {
   const [googleLoading, setGoogleLoading] = React.useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!captchaToken) {
-      setError("Iltimos, Turnstile tekshiruvidan o'ting.");
+    if (!captchaToken && !captchaBroken) {
+      setError(t("auth.captcha.required"));
       return;
     }
     setError(null);
@@ -120,8 +122,11 @@ export function LoginPage() {
             </button>
           </div>
         </Field>
-        <Turnstile onVerify={setCaptchaToken} />
-        <Button type="submit" className="w-full" loading={emailLoading} disabled={!captchaToken}>
+        <Turnstile onVerify={setCaptchaToken} onError={handleCaptchaError} />
+        {captchaBroken && (
+          <p className="text-center text-xs text-amber-400/80">{t("auth.captcha.failed")}</p>
+        )}
+        <Button type="submit" className="w-full" loading={emailLoading} disabled={!captchaToken && !captchaBroken}>
           {t("auth.login.submit")}
         </Button>
       </form>

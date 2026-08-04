@@ -48,6 +48,8 @@ export const auth = {
     "auth.login.errorDefault": "Sign-in failed. Try again.",
     "auth.login.errorGoogle": "Google sign-in failed.",
     "auth.login.errorApple": "Apple sign-in failed.",
+    "auth.captcha.required": "Please complete the Turnstile check.",
+    "auth.captcha.failed": "The security check could not load. Reload the page and try again.",
   },
   ru: {
     "auth.register.heading": "Создать центр",
@@ -98,6 +100,8 @@ export const auth = {
     "auth.login.errorDefault": "Ошибка входа. Попробуйте снова.",
     "auth.login.errorGoogle": "Ошибка входа через Google.",
     "auth.login.errorApple": "Ошибка входа через Apple.",
+    "auth.captcha.required": "Пожалуйста, пройдите проверку Turnstile.",
+    "auth.captcha.failed": "Не удалось загрузить проверку безопасности. Обновите страницу и попробуйте снова.",
   },
   uz: {
     "auth.register.heading": "Markaz yaratish",
@@ -148,5 +152,7 @@ export const auth = {
     "auth.login.errorDefault": "Kirish xatosi. Qayta urinib ko'ring.",
     "auth.login.errorGoogle": "Google orqali kirish xatosi.",
     "auth.login.errorApple": "Apple orqali kirish xatosi.",
+    "auth.captcha.required": "Iltimos, Turnstile tekshiruvidan o'ting.",
+    "auth.captcha.failed": "Xavfsizlik tekshiruvini yuklab bo'lmadi. Sahifani yangilab, qayta urinib ko'ring.",
   },
 };
