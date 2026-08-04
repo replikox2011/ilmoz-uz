@@ -121,12 +121,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isLegacy = snap.exists();
         }
       } else {
-        // Root domain: query by field 'id'
-        const s = await getDocs(query(collection(db, "userProfiles"), where("id", "==", fb.uid), limit(1)));
-        if (!s.empty) {
-          snap = s.docs[0];
-        } else {
-          // Fallback to legacy key
+        // Root domain:
+        // 1. Try platform admin first (platform_{uid})
+        snap = await getDoc(doc(db, "userProfiles", `platform_${fb.uid}`));
+        if (!snap.exists()) {
+          // 2. Try looking up center by ownerEmail if user has an email
+          let ownerCenterId: string | null = null;
+          if (fb.email) {
+            const centersRef = collection(db, "centers");
+            const q = query(centersRef, where("ownerEmail", "==", fb.email.toLowerCase()), limit(1));
+            const querySnap = await getDocs(q);
+            if (!querySnap.empty) {
+              ownerCenterId = querySnap.docs[0].id;
+            }
+          }
+          if (ownerCenterId) {
+            snap = await getDoc(doc(db, "userProfiles", `${ownerCenterId}_${fb.uid}`));
+          }
+        }
+        if (!snap || !snap.exists()) {
+          // 3. Fallback to legacy key
           snap = await getDoc(doc(db, "userProfiles", fb.uid));
           isLegacy = snap.exists();
         }
