@@ -18,6 +18,7 @@ import { slugifySubdomain } from "../../lib/subdomain";
 import { useSubdomainAvailability } from "../../hooks/useSubdomainAvailability";
 import { LogoUpload } from "../../components/ui/LogoUpload";
 import { uid, cn } from "../../lib/utils";
+import { Turnstile } from "../../components/ui/Turnstile";
 
 // Framer v11 shim
 const AP = AnimatePresence as any as React.FC<{
@@ -74,6 +75,7 @@ export function RegisterPage() {
   const [showPwd, setShowPwd]     = React.useState(false);
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = React.useState(false);
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
 
   const [subdomain, setSubdomain]         = React.useState("");
   const [subdomainEdited, setSubdomainEdited] = React.useState(false);
@@ -109,6 +111,10 @@ export function RegisterPage() {
   // ── Final submit ──────────────────────────
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
+    if (!captchaToken) {
+      setServerError("Iltimos, Turnstile tekshiruvidan o'ting.");
+      return;
+    }
     if (available === false) {
       setServerError("That subdomain is already taken. Please choose another.");
       return;
@@ -351,7 +357,8 @@ export function RegisterPage() {
                   />
                 </Field>
 
-                <Button type="submit" loading={isSubmitting} className="w-full mt-1" size="lg">
+                <Turnstile onVerify={setCaptchaToken} />
+                <Button type="submit" loading={isSubmitting} disabled={!captchaToken} className="w-full mt-1" size="lg">
                   {t("auth.register.submitEmail")}
                 </Button>
                 <p className="text-center text-xs text-white/30">{t("auth.register.terms")}</p>

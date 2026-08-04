@@ -15,10 +15,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { LoginPageCustomizer } from "../../components/settings/LoginPageCustomizer";
 import { useI18n } from "../../i18n/I18nContext";
-
-/** Only directors and owners may edit center settings (name, currency, logo, login page). */
 const CAN_EDIT_CENTER: string[] = ["owner", "director"];
-
 export function SettingsPage() {
   const { user, center, logout, setCenter } = useAuth();
   const { t } = useI18n();
@@ -165,7 +162,7 @@ export function SettingsPage() {
       {/* Danger zone */}
       <GlassCard className="border-red-500/20 p-6 space-y-5">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-red-400/70">{t("settings.sectionDangerZone")}</h2>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-white">{t("settings.signOut")}</p>

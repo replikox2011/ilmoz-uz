@@ -9,31 +9,31 @@ import { useI18n } from "../../i18n/I18nContext";
 import { firestoreRepository } from "../../data/firestoreRepository";
 import { Center } from "../../types";
 import { buildRootUrl } from "../../lib/subdomain";
+import { Turnstile } from "../../components/ui/Turnstile";
 
-// ==========================================================================
 export function LoginPage() {
   const { signInWithGoogle, signInWithLogin, activeSubdomain, subdomainCenterId } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
-
-  // ── Load center branding if on subdomain ─────────────────────────────────
   const [centerBrand, setCenterBrand] = React.useState<Center | null>(null);
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
+
   React.useEffect(() => {
     if (!subdomainCenterId) return;
     firestoreRepository.getCenter(subdomainCenterId).then(c => setCenterBrand(c));
   }, [subdomainCenterId]);
-
-  // email/username/phone + password flow
-  const [login, setLogin]     = React.useState("");
+  const [login, setLogin] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPwd, setShowPwd] = React.useState(false);
-  const [error, setError]     = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
   const [emailLoading, setEmailLoading] = React.useState(false);
   const [googleLoading, setGoogleLoading] = React.useState(false);
-
-  // ── email / username / phone + password ──────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!captchaToken) {
+      setError("Iltimos, Turnstile tekshiruvidan o'ting.");
+      return;
+    }
     setError(null);
     setEmailLoading(true);
     try {
@@ -54,8 +54,6 @@ export function LoginPage() {
       setEmailLoading(false);
     }
   };
-
-  // ── google sign-in ───────────────────────────────────────────────────────
   const handleGoogle = async () => {
     setGoogleLoading(true);
     setError(null);
@@ -122,7 +120,8 @@ export function LoginPage() {
             </button>
           </div>
         </Field>
-        <Button type="submit" className="w-full" loading={emailLoading}>
+        <Turnstile onVerify={setCaptchaToken} />
+        <Button type="submit" className="w-full" loading={emailLoading} disabled={!captchaToken}>
           {t("auth.login.submit")}
         </Button>
       </form>

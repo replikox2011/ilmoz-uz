@@ -9,8 +9,6 @@ import { Button } from "../ui/Button";
 import { cn } from "../../lib/utils";
 import { useI18n } from "../../i18n/I18nContext";
 import { CenterSnapshot } from "./copilotTools";
-
-// Framer v11 shim
 const AnimatePresence = _AnimatePresence as any as React.FC<{
   mode?: string; children?: React.ReactNode;
 }>;
@@ -224,8 +222,8 @@ export function FloatingCopilot() {
 // ── Mini model picker (icon-only with tooltip dropdown) ───────────────────────
 const MINI_ICONS: Record<string, React.ReactNode> = {
   "groq-fast": <Zap className="h-3.5 w-3.5" />,
-  "groq-pro":  <Brain className="h-3.5 w-3.5" />,
-  "gpt-4o":    <Bot className="h-3.5 w-3.5" />,
+  "groq-pro": <Brain className="h-3.5 w-3.5" />,
+  "gpt-4o": <Bot className="h-3.5 w-3.5" />,
   "ling-3-flash-free": <Sparkles className="h-3.5 w-3.5" />,
 };
 
@@ -356,7 +354,7 @@ function MiniMessage({ msg, userName, userColor, copyLabel, copiedLabel }: {
         )}>
           {msg.pending && !msg.content ? (
             <span className="flex gap-1 py-0.5">
-              {[0,1,2].map(i => (
+              {[0, 1, 2].map(i => (
                 <span key={i} className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </span>
