@@ -384,24 +384,14 @@ function EditTestModal({
     >
       <form onSubmit={handleSave} className="space-y-4">
         {/* Basic fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-xs text-white/50 font-medium">{t("tests.fieldTitleLabel")}</label>
-            <Input
-              placeholder={t("tests.fieldTitle")}
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-white/50 font-medium">{t("tests.fieldPromptLabel")}</label>
-            <Input
-              placeholder={t("tests.fieldTopic")}
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-            />
-          </div>
+        <div>
+          <label className="mb-1 block text-xs text-white/50 font-medium">{t("tests.fieldTitleLabel")}</label>
+          <Input
+            placeholder={t("tests.fieldTitle")}
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            required
+          />
         </div>
 
         {/* AI Refinement Box */}
