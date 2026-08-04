@@ -237,6 +237,11 @@ service cloud.firestore {
       allow read: if signedIn() && resource.data.get('id', '') == uid();
       // Чужие — только внутри своего центра
       allow read: if signedIn() && member(resource.data.get('centerId', ''));
+      // Отсутствующий документ: у него нет resource.data, поэтому оба правила выше
+      // дают false и getDoc падает с permission-denied вместо пустого снапшота.
+      // loadProfile перебирает ключи-кандидаты (platform_{uid}, {cid}_{uid}, {uid}),
+      // и промах по любому из них обязан возвращать пустой результат.
+      allow get: if signedIn() && resource == null;
 
       // Персонал заводит учеников и сотрудников — только в своём центре.
       // Закрыто: staff не может назначить role='owner' (только owner или platformAdmin).

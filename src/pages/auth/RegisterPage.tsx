@@ -76,8 +76,6 @@ export function RegisterPage() {
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = React.useState(false);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
-  const [captchaBroken, setCaptchaBroken] = React.useState(false);
-  const handleCaptchaError = React.useCallback(() => setCaptchaBroken(true), []);
 
   const [subdomain, setSubdomain]         = React.useState("");
   const [subdomainEdited, setSubdomainEdited] = React.useState(false);
@@ -113,8 +111,8 @@ export function RegisterPage() {
   // ── Final submit ──────────────────────────
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
-    if (!captchaToken && !captchaBroken) {
-      setServerError(t("auth.captcha.required"));
+    if (!captchaToken) {
+      setServerError("Iltimos, Turnstile tekshiruvidan o'ting.");
       return;
     }
     if (available === false) {
@@ -359,11 +357,8 @@ export function RegisterPage() {
                   />
                 </Field>
 
-                <Turnstile onVerify={setCaptchaToken} onError={handleCaptchaError} />
-                {captchaBroken && (
-                  <p className="text-center text-xs text-amber-400/80">{t("auth.captcha.failed")}</p>
-                )}
-                <Button type="submit" loading={isSubmitting} disabled={!captchaToken && !captchaBroken} className="w-full mt-1" size="lg">
+                <Turnstile onVerify={setCaptchaToken} />
+                <Button type="submit" loading={isSubmitting} disabled={!captchaToken} className="w-full mt-1" size="lg">
                   {t("auth.register.submitEmail")}
                 </Button>
                 <p className="text-center text-xs text-white/30">{t("auth.register.terms")}</p>
