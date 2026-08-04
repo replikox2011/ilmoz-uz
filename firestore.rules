@@ -233,10 +233,10 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════════════════
 
     match /userProfiles/{docId} {
-      // Свой профиль — всегда; чужие — только внутри своего центра.
-      allow read: if signedIn()
-                  && (resource.data.get('id', '') == uid()
-                      || member(resource.data.get('centerId', '')));
+      // Свой профиль — всегда
+      allow read: if signedIn() && resource.data.get('id', '') == uid();
+      // Чужие — только внутри своего центра
+      allow read: if signedIn() && member(resource.data.get('centerId', ''));
 
       // Персонал заводит учеников и сотрудников — только в своём центре.
       // Закрыто: staff не может назначить role='owner' (только owner или platformAdmin).
