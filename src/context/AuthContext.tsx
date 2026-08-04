@@ -267,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setNeedsPhoneVerification(false);
         }
       } catch (err: any) {
+        console.error("Auth listener error:", err);
         // User belongs to a different center — redirect them to their correct subdomain.
         if (typeof err?.message === "string" && err.message.startsWith("wrong-center:")) {
           const correctCenterId = err.message.split(":")[1];
@@ -276,6 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             window.location.href = `${window.location.protocol}//${correctCenter.subdomain}.${
               window.location.hostname.includes("localhost") ? "localhost" : ROOT_DOMAIN
             }${window.location.port ? `:${window.location.port}` : ""}/`;
+            return;
           } else {
             // No subdomain configured — sign out cleanly and show the login page.
             await signOut(auth);
@@ -288,7 +290,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setCenter(null);
           setFbUser(null);
-          throw new Error("Asosiy saytdan faqat markaz egalari kirishlari mumkin. O'quvchilar va o'qituvchilar o'z markazining subdomenidan kirishlari kerak.");
+          alert("Asosiy saytdan faqat markaz egalari kirishlari mumkin. O'quvchilar va o'qituvchilar o'z markazining subdomenidan kirishlari kerak.");
+        } else {
+          // General fallback: sign out on unexpected load errors to prevent stuck loading screen
+          await signOut(auth);
+          setUser(null);
+          setCenter(null);
+          setFbUser(null);
+          setNeedsCenterSetup(false);
+          setNeedsPhoneVerification(false);
+          alert("Profilni yuklashda xatolik yuz berdi: " + (err?.message || err));
         }
       }
       setLoading(false);
