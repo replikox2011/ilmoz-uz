@@ -26,8 +26,22 @@ function slugify(s: string) {
 function genId(prefix = "id") {
   return `${prefix}_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
 }
-function strip(obj: Record<string, any>): Record<string, any> {
-  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+function strip(obj: any): any {
+  if (obj === null || obj === undefined) return undefined;
+  if (Array.isArray(obj)) {
+    return obj.map((item) => strip(item)).filter((item) => item !== undefined);
+  }
+  if (typeof obj === "object" && !(obj instanceof Date)) {
+    const cleaned: Record<string, any> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      const strippedVal = strip(v);
+      if (strippedVal !== undefined) {
+        cleaned[k] = strippedVal;
+      }
+    }
+    return cleaned;
+  }
+  return obj;
 }
 function fromSnap<T>(d: any): T {
   return { id: d.id, ...d.data() } as T;
@@ -58,11 +72,11 @@ export class FirestoreRepository implements Repository {
         throw new Error("Subdomain is already taken");
       }
       const batch = writeBatch(db);
-      batch.set(doc(db, "centers", id), c);
+      batch.set(doc(db, "centers", id), strip(c as any));
       batch.set(doc(db, "subdomains", input.subdomain), { centerId: id });
       await batch.commit();
     } else {
-      await setDoc(doc(db, "centers", id), c);
+      await setDoc(doc(db, "centers", id), strip(c as any));
     }
     return c;
   }
