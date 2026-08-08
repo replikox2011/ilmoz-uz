@@ -2,7 +2,6 @@ import * as React from "react";
 import {
   BookOpen, Plus, CalendarDays, GraduationCap, CheckCircle2, ClipboardList,
   X, Trash2, BarChart3, Users, ArrowRight, ArrowLeft, Target, TrendingUp, TrendingDown,
-  LineChart as LineChartIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
@@ -14,15 +13,14 @@ import { Input } from "../../components/ui/Input";
 import { Avatar } from "../../components/ui/Avatar";
 import { Modal } from "../../components/ui/Modal";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { Sparkline } from "../../components/ui/Sparkline";
 import { LineChart, LineSeries } from "../../components/ui/LineChart";
 import { Stagger, FadeItem } from "../../components/motion/Motion";
 import { Assignment, Group, Lesson, Student, Weekday, WEEKDAYS } from "../../types";
 import { useI18n } from "../../i18n/I18nContext";
 import { uid } from "../../lib/utils";
 import {
-  lessonPercentForStudent, lessonMaxTotal, averagePercent, progressSeries,
-  progressDelta, passSummary, percentColor, percentStroke,
+  lessonPercentForStudent, lessonMaxTotal, averagePercent,
+  percentColor, percentStroke,
   assignmentPercent, assignmentColor,
 } from "../../lib/grades";
 
@@ -35,12 +33,6 @@ function weekdayOf(iso: string): Weekday | null {
   const d = new Date(iso + "T00:00:00");
   if (Number.isNaN(d.getTime())) return null;
   return JS_DAY_TO_WEEKDAY[d.getDay()];
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 }
 
 function shortDate(iso: string): string {
@@ -69,6 +61,7 @@ export function JournalPage({ groupId }: { groupId?: string }) {
   const [gradingLessonId, setGradingLessonId] = React.useState<string | null>(null);
   const [showCompare, setShowCompare] = React.useState(false);
   const [chartStudentId, setChartStudentId] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] = React.useState<"grades" | "attendance">("grades");
 
   React.useEffect(() => {
     if (groupId) {
@@ -229,13 +222,66 @@ export function JournalPage({ groupId }: { groupId?: string }) {
             </GlassCard>
           ) : (
             <FadeItem>
-              <GradebookTable
-                students={groupStudents}
-                lessons={chronoLessons}
-                onGrade={setGradingLessonId}
-                onStudentClick={setChartStudentId}
-                t={t}
-              />
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-white/10 px-4">
+                  {!gradingLessonId ? (
+                    <>
+                      <button
+                        onClick={() => setActiveTab("grades")}
+                        className={`px-4 py-3 text-sm font-medium border-b-2 transition ${activeTab === "grades" ? "border-brand-400 text-brand-100" : "border-transparent text-white/50 hover:text-white"}`}
+                      >
+                        {t("journal.title") || "O'zlashtirish"}
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("attendance")}
+                        className={`px-4 py-3 text-sm font-medium border-b-2 transition ${activeTab === "attendance" ? "border-brand-400 text-brand-100" : "border-transparent text-white/50 hover:text-white"}`}
+                      >
+                        {t("journal.attendance.title") || "Davomat"}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 group">
+                      <button
+                        className="px-4 py-3 text-sm font-medium border-b-2 transition border-brand-400 text-brand-100 flex items-center gap-2"
+                      >
+                        {shortDate(gradingLesson?.date ?? "")}: {gradingLesson?.topic}
+                      </button>
+                      <button onClick={() => setGradingLessonId(null)} className="text-white/30 hover:text-white">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {gradingLesson && center ? (
+                  <GlassCard className="p-0 border-0">
+                    <GradeLessonView
+                      lesson={gradingLesson}
+                      students={groupStudents}
+                      centerId={center.id}
+                      onSaved={handleLessonSaved}
+                      t={t}
+                    />
+                  </GlassCard>
+                ) : activeTab === "attendance" && center ? (
+                  <AttendanceTable
+                    students={groupStudents}
+                    lessons={chronoLessons}
+                    centerId={center.id}
+                    onStudentClick={setChartStudentId}
+                    onLessonSaved={handleLessonSaved}
+                    t={t}
+                  />
+                ) : (
+                  <GradebookTable
+                    students={groupStudents}
+                    lessons={chronoLessons}
+                    onGrade={setGradingLessonId}
+                    onStudentClick={setChartStudentId}
+                    t={t}
+                  />
+                )}
+              </div>
             </FadeItem>
           )}
         </>
@@ -249,18 +295,6 @@ export function JournalPage({ groupId }: { groupId?: string }) {
           centerId={center.id}
           onClose={() => setShowWizard(false)}
           onCreated={handleLessonCreated}
-          t={t}
-        />
-      )}
-
-      {/* Grading detail modal (edit an existing lesson) */}
-      {gradingLesson && center && (
-        <GradeLessonModal
-          lesson={gradingLesson}
-          students={groupStudents}
-          centerId={center.id}
-          onClose={() => setGradingLessonId(null)}
-          onSaved={handleLessonSaved}
           t={t}
         />
       )}
@@ -618,10 +652,156 @@ function AddLessonWizard({
     </Modal>
   );
 }
+/* ─────────────────────────────────────────────────────────────────────────
+   Attendance Table — rows = students, columns = lessons. Inline toggle.
+   ───────────────────────────────────────────────────────────────────────── */
+function AttendanceTable({
+  students, lessons, centerId, onStudentClick, onLessonSaved, t,
+}: {
+  students: Student[];
+  lessons: Lesson[];
+  centerId: string;
+  onStudentClick: (studentId: string) => void;
+  onLessonSaved: (updated: Lesson) => void;
+  t: (key: string) => string;
+}) {
+  const toggleAttendance = async (lesson: Lesson, studentId: string) => {
+    const current = lesson.attendance?.[studentId];
+    let next: boolean | "late" = true; // undefined -> true
+    if (current === true) next = "late"; // true -> late
+    else if (current === "late") next = false; // late -> false
+    else if (current === false) next = true; // false -> true
+
+    const updated = { ...lesson, attendance: { ...(lesson.attendance || {}), [studentId]: next } };
+    
+    // 1. Optimistically update state on front-end so UI updates instantly
+    onLessonSaved(updated);
+
+    // 2. Persist to Firebase in background
+    try {
+      await repo.updateLesson(centerId, lesson.id, updated);
+    } catch (err) {
+      console.error("Failed to update attendance", err);
+      // Revert if error
+      onLessonSaved(lesson);
+    }
+  };
+
+  return (
+    <GlassCard className="overflow-hidden p-0">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/[0.02]">
+              <th className="sticky left-0 z-10 bg-bg-elevated/95 px-4 py-3 text-left text-xs font-semibold text-white/70 backdrop-blur w-64">
+                {t("journal.table.student")}
+              </th>
+              {lessons.map((l) => (
+                <th key={l.id} className="px-2 py-2 text-center align-bottom min-w-[3.5rem]">
+                  <div className="group flex w-full flex-col items-center gap-0.5 rounded-lg px-1.5 py-1">
+                    <span className="text-[11px] font-semibold text-white/70">{shortDate(l.date)}</span>
+                    <span className="max-w-[5rem] truncate text-[9px] text-white/35">{l.topic}</span>
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {students.map((s) => (
+              <tr key={s.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition">
+                <td className="sticky left-0 z-10 bg-bg-elevated/95 px-4 py-2.5 backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={() => onStudentClick(s.id)}
+                    className="group flex items-center gap-2 rounded-lg text-left transition hover:opacity-80"
+                  >
+                    <Avatar name={s.name} color={s.avatarColor} size="sm" />
+                    <span className="truncate text-sm font-medium text-white group-hover:text-brand-200">{s.name}</span>
+                  </button>
+                </td>
+                {lessons.map((l) => {
+                  const status = l.attendance?.[s.id];
+                  return (
+                    <td key={l.id} className="px-1 py-1 text-center">
+                      <button
+                        onClick={() => toggleAttendance(l, s.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition mx-auto group"
+                        title={status === true ? "Пришел" : status === "late" ? "Опоздал" : status === false ? "Не пришел" : "Отметить"}
+                      >
+                        {status === true ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        ) : status === "late" ? (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-amber-400 flex items-center justify-center">
+                            <div className="w-1 h-1 bg-amber-400 rounded-full" />
+                          </div>
+                        ) : status === false ? (
+                          <X className="h-4 w-4 text-rose-400" />
+                        ) : (
+                          <div className="h-1.5 w-1.5 rounded-full bg-white/10 group-hover:bg-white/30 transition" />
+                        )}
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </GlassCard>
+  );
+}
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Gradebook table — rows = students, columns = lessons, + progress column.
+   Gradebook table — rows = students sorted by total score DESC, 
+   columns = lessons with attendance + per-lesson score, 
+   rightmost = sum / % / prev-rank / change.
    ───────────────────────────────────────────────────────────────────────── */
+
+/** Raw score a student earned in a lesson (sum of grades, not %). */
+function lessonRawScore(lesson: Lesson, studentId: string): number | null {
+  const assignments = lesson.assignments ?? [];
+  if (assignments.length === 0) return null;
+  const g = lesson.grades?.[studentId];
+  if (!g) return null;
+  let total = 0;
+  let has = false;
+  for (const a of assignments) {
+    const v = g[a.id];
+    if (v === undefined || v === null) continue;
+    total += Math.max(0, Math.min(Number(v), a.maxScore));
+    has = true;
+  }
+  return has ? total : null;
+}
+
+/** Total raw score across all lessons for a student. */
+function totalRawScore(lessons: Lesson[], studentId: string): number {
+  return lessons.reduce((sum, l) => sum + (lessonRawScore(l, studentId) ?? 0), 0);
+}
+
+/** Grand max possible across all lessons. */
+function totalMaxScore(lessons: Lesson[]): number {
+  return lessons.reduce((sum, l) => sum + lessonMaxTotal(l), 0);
+}
+
+/** Percentage of total score across all lessons. */
+function totalPercent(lessons: Lesson[], studentId: string): number | null {
+  const max = totalMaxScore(lessons);
+  if (max === 0) return null;
+  const raw = totalRawScore(lessons, studentId);
+  return Math.round((raw / max) * 100);
+}
+
+/** Row background tint based on rank tier. */
+function rankRowBg(rank: number, total: number): string {
+  const p = rank / total;
+  if (p <= 0.15) return "bg-emerald-500/[0.07]";
+  if (p <= 0.40) return "bg-amber-500/[0.05]";
+  if (p >= 0.85) return "bg-rose-500/[0.07]";
+  return "";
+}
+
 function GradebookTable({
   students, lessons, onGrade, onStudentClick, t,
 }: {
@@ -631,103 +811,192 @@ function GradebookTable({
   onStudentClick: (studentId: string) => void;
   t: (key: string) => string;
 }) {
+  // Sort students by total score DESC to compute current rank
+  const ranked = React.useMemo(() => {
+    return [...students]
+      .map((s) => ({ s, total: totalRawScore(lessons, s.id), pct: totalPercent(lessons, s.id) }))
+      .sort((a, b) => b.total - a.total)
+      .map((item, idx) => ({ ...item, rank: idx + 1 }));
+  }, [students, lessons]);
+
+  // Previous rank: computed without the latest lesson
+  const prevRanked = React.useMemo(() => {
+    const prevLessons = lessons.slice(0, -1);
+    return [...students]
+      .map((s) => ({ id: s.id, total: totalRawScore(prevLessons, s.id) }))
+      .sort((a, b) => b.total - a.total)
+      .map((item, idx) => ({ id: item.id, rank: idx + 1 }));
+  }, [students, lessons]);
+
+  const prevRankMap = React.useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const x of prevRanked) m[x.id] = x.rank;
+    return m;
+  }, [prevRanked]);
+
+  // Grand max & column max scores for header
+  const grand = totalMaxScore(lessons);
+
+  // Group average per lesson (raw)
+  const lessonAvg = React.useMemo(() =>
+    lessons.map((l) => {
+      const scores = students.map((s) => lessonRawScore(l, s.id)).filter((v): v is number => v !== null);
+      return scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "—";
+    }),
+    [lessons, students]
+  );
+
   return (
     <GlassCard className="overflow-hidden p-0">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
+            {/* ── Row 1: month labels (group name + lesson dates) ── */}
+            <tr className="border-b border-white/10 bg-white/[0.02]">
+              <th colSpan={2} className="sticky left-0 z-10 bg-bg-elevated/95 px-4 py-2 text-left text-xs font-semibold text-white/70 backdrop-blur">
+                № / {t("journal.table.student")}
+              </th>
+              {lessons.map((l) => (
+                <th key={l.id} colSpan={1} className="px-2 py-1 text-center">
+                  <button
+                    onClick={() => onGrade(l.id)}
+                    className="group flex w-full flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 transition hover:bg-white/5"
+                  >
+                    <span className="text-[11px] font-semibold text-white/70 group-hover:text-white">{shortDate(l.date)}</span>
+                    <span className="max-w-[5rem] truncate text-[9px] text-white/35 group-hover:text-white/55">{l.topic}</span>
+                    <span className="text-[9px] text-brand-300/60">{t("journal.table.maxShort")} {lessonMaxTotal(l)}</span>
+                  </button>
+                </th>
+              ))}
+              <th className="sticky right-0 z-10 bg-bg-elevated/95 px-3 py-2 text-center text-xs font-semibold text-white/60 backdrop-blur">Summa</th>
+              <th className="sticky right-0 z-10 bg-bg-elevated/95 px-3 py-2 text-center text-xs font-semibold text-white/60 backdrop-blur">%</th>
+              <th className="px-3 py-2 text-center text-xs font-semibold text-white/60">{t("journal.table.prevRank") || "O'tkan orin"}</th>
+              <th className="px-3 py-2 text-center text-xs font-semibold text-white/60">{t("journal.table.change") || "O'zgeris"}</th>
+            </tr>
+            {/* ── Row 2: max ball per lesson ── */}
             <tr className="border-b border-white/10">
-              <th className="sticky left-0 z-10 bg-bg-elevated/95 px-4 py-3 text-left text-xs font-medium text-white/50 backdrop-blur">
-                {t("journal.table.student")}
-              </th>
-              {lessons.map((l) => {
-                const graded = (l.assignments?.length ?? 0) > 0;
-                return (
-                  <th key={l.id} className="px-2 py-2 text-center align-bottom">
-                    <button
-                      onClick={() => onGrade(l.id)}
-                      title={l.topic}
-                      className="group mx-auto flex min-w-[3.5rem] flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 transition hover:bg-white/5"
-                    >
-                      <span className="text-[11px] font-semibold text-white/70 group-hover:text-white">{shortDate(l.date)}</span>
-                      <span className="max-w-[5rem] truncate text-[10px] text-white/35 group-hover:text-white/55">{l.topic}</span>
-                      {graded ? (
-                        <span className="mt-0.5 text-[9px] text-brand-300/70">{t("journal.table.maxShort")} {lessonMaxTotal(l)}</span>
-                      ) : (
-                        <span className="mt-0.5 text-[9px] text-white/25">{t("journal.table.notGraded")}</span>
-                      )}
-                    </button>
-                  </th>
-                );
-              })}
-              <th className="sticky right-0 z-10 bg-bg-elevated/95 px-4 py-3 text-center text-xs font-medium text-white/50 backdrop-blur">
-                {t("journal.table.progress")}
-              </th>
+              <td colSpan={2} className="sticky left-0 z-10 bg-bg-elevated/95 px-4 py-1.5 text-left text-[10px] font-medium text-white/35 backdrop-blur">
+                FIO / Max ball
+              </td>
+              {lessons.map((l) => (
+                <td key={l.id} className="px-2 py-1.5 text-center text-[10px] font-semibold text-brand-300/70">
+                  {lessonMaxTotal(l) || "—"}
+                </td>
+              ))}
+              <td className="sticky right-0 z-10 bg-bg-elevated/95 px-3 py-1.5 text-center text-[10px] font-semibold text-brand-300/70 backdrop-blur">{grand || "—"}</td>
+              <td className="sticky right-0 z-10 bg-bg-elevated/95 px-3 py-1.5 text-center text-[10px] text-white/35 backdrop-blur">100</td>
+              <td colSpan={2} />
             </tr>
           </thead>
           <tbody>
-            {students.map((s) => {
-              const avg = averagePercent(lessons, s.id);
-              const series = progressSeries(lessons, s.id);
+            {ranked.map(({ s, total, pct, rank }) => {
+              const prevRank = prevRankMap[s.id] ?? rank;
+              const change = prevRank - rank; // positive = moved up
+              const rowBg = rankRowBg(rank, ranked.length);
+
               return (
-                <tr key={s.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]">
-                  <td className="sticky left-0 z-10 bg-bg-elevated/95 px-4 py-2.5 backdrop-blur">
+                <tr key={s.id} className={`border-b border-white/[0.04] last:border-0 hover:brightness-110 transition ${rowBg}`}>
+                  {/* Rank + Name */}
+                  <td className="sticky left-0 z-10 bg-bg-elevated/90 pl-4 pr-1 py-2.5 text-center text-xs font-bold text-white/40 backdrop-blur w-8">
+                    {rank}
+                  </td>
+                  <td className="sticky left-8 z-10 bg-bg-elevated/90 pr-4 py-2.5 backdrop-blur min-w-[160px]">
                     <button
                       type="button"
                       onClick={() => onStudentClick(s.id)}
-                      title={t("journal.chart.open")}
-                      className="group flex items-center gap-2.5 rounded-lg text-left transition hover:opacity-80"
+                      className="group flex items-center gap-2 rounded-lg text-left transition hover:opacity-80"
                     >
                       <Avatar name={s.name} color={s.avatarColor} size="sm" />
                       <span className="truncate text-sm font-medium text-white group-hover:text-brand-200">{s.name}</span>
-                      <LineChartIcon className="h-3.5 w-3.5 shrink-0 text-white/20 group-hover:text-brand-300" />
                     </button>
                   </td>
+
+                  {/* Per-lesson columns: attendance + score */}
                   {lessons.map((l) => {
                     const present = l.attendance?.[s.id];
-                    const pct = lessonPercentForStudent(l, s.id);
-                    const summary = passSummary(l, s.id);
-                    const delta = progressDelta(lessons, l, s.id);
+                    const raw = lessonRawScore(l, s.id);
+                    const pctLesson = lessonPercentForStudent(l, s.id);
+
                     return (
                       <td key={l.id} className="px-2 py-2.5 text-center">
-                        {pct !== null ? (
+                        {raw !== null ? (
                           <div className="flex flex-col items-center gap-0.5">
-                            <div className="flex items-center gap-1">
-                              <span className={`text-sm font-semibold ${percentColor(pct)}`}>{pct}%</span>
-                              {delta !== null && delta !== 0 && (
-                                <span className={`flex items-center text-[10px] ${delta > 0 ? "text-emerald-400/80" : "text-rose-400/80"}`}>
-                                  {delta > 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-                                  {Math.abs(delta)}
-                                </span>
-                              )}
-                            </div>
-                            {summary && (
-                              <span className={`text-[9px] ${summary.passed === summary.graded ? "text-emerald-400/70" : "text-amber-400/70"}`}>
-                                {summary.passed}/{summary.graded} {t("journal.table.passedShort")}
-                              </span>
-                            )}
+                            <span className={`text-sm font-semibold ${pctLesson !== null ? percentColor(pctLesson) : "text-white"}`}>
+                              {raw}
+                            </span>
+                            <span className="text-[9px] text-white/30">{pctLesson !== null ? `${pctLesson}%` : ""}</span>
                           </div>
                         ) : present === false ? (
-                          <span title={t("journal.attendance.studentAbsent")} className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-rose-500/10 text-rose-300/70">
+                          <span
+                            title={t("journal.attendance.studentAbsent")}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-rose-500/15 text-rose-400/80"
+                          >
                             <X className="h-3 w-3" />
                           </span>
                         ) : (
-                          <span className="text-white/20">·</span>
+                          <span className="text-white/15">·</span>
                         )}
                       </td>
                     );
                   })}
-                  <td className="sticky right-0 z-10 bg-bg-elevated/95 px-4 py-2.5 backdrop-blur">
-                    <div className="flex items-center justify-end gap-2">
-                      <Sparkline values={series} stroke={avg !== null ? percentStroke(avg) : "#c7d2fe"} />
-                      <span className={`w-10 text-right text-sm font-bold ${avg !== null ? percentColor(avg) : "text-white/25"}`}>
-                        {avg !== null ? `${avg}%` : "—"}
+
+                  {/* Sum */}
+                  <td className="sticky right-[120px] z-10 bg-bg-elevated/90 px-3 py-2.5 text-center backdrop-blur">
+                    <span className={`text-sm font-bold ${pct !== null ? percentColor(pct) : "text-white/25"}`}>
+                      {total > 0 ? total : "—"}
+                    </span>
+                  </td>
+
+                  {/* % */}
+                  <td className="sticky right-[60px] z-10 bg-bg-elevated/90 px-3 py-2.5 text-center backdrop-blur">
+                    <span className={`text-sm font-bold ${pct !== null ? percentColor(pct) : "text-white/25"}`}>
+                      {pct !== null ? `${pct}%` : "—"}
+                    </span>
+                  </td>
+
+                  {/* Previous rank */}
+                  <td className="px-3 py-2.5 text-center">
+                    <span className="text-xs text-white/40">{prevRank}</span>
+                  </td>
+
+                  {/* Change */}
+                  <td className="px-3 py-2.5 text-center">
+                    {change === 0 ? (
+                      <span className="text-xs font-semibold text-amber-400">—</span>
+                    ) : change > 0 ? (
+                      <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-400">
+                        <TrendingUp className="h-3 w-3" />+{change}
                       </span>
-                    </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 text-xs font-bold text-rose-400">
+                        <TrendingDown className="h-3 w-3" />{change}
+                      </span>
+                    )}
                   </td>
                 </tr>
               );
             })}
+
+            {/* ── Group average row ── */}
+            <tr className="border-t-2 border-white/10 bg-white/[0.03]">
+              <td colSpan={2} className="sticky left-0 z-10 bg-bg-elevated/90 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white/50 backdrop-blur">
+                {t("journal.table.groupAvg") || "Gruppa o'rtachasi"}
+              </td>
+              {lessonAvg.map((avg, i) => (
+                <td key={i} className="px-2 py-2.5 text-center text-xs font-semibold text-white/50">{avg}</td>
+              ))}
+              <td className="sticky right-[120px] z-10 bg-bg-elevated/90 px-3 py-2.5 text-center text-xs font-semibold text-white/50 backdrop-blur">
+                {students.length > 0
+                  ? Math.round(ranked.reduce((sum, r) => sum + r.total, 0) / students.length)
+                  : "—"}
+              </td>
+              <td className="sticky right-[60px] z-10 bg-bg-elevated/90 px-3 py-2.5 text-center text-xs font-semibold text-white/50 backdrop-blur">
+                {ranked.length > 0 && ranked.some((r) => r.pct !== null)
+                  ? `${Math.round(ranked.filter((r) => r.pct !== null).reduce((sum, r) => sum + (r.pct ?? 0), 0) / ranked.filter((r) => r.pct !== null).length)}%`
+                  : "—"}
+              </td>
+              <td colSpan={2} />
+            </tr>
           </tbody>
         </table>
       </div>
@@ -736,19 +1005,18 @@ function GradebookTable({
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Grading modal — edit an existing lesson (attendance + tests + scores).
+   Grading view — edit an existing lesson inline (attendance + tests + scores).
    ───────────────────────────────────────────────────────────────────────── */
-function GradeLessonModal({
-  lesson, students, centerId, onClose, onSaved, t,
+function GradeLessonView({
+  lesson, students, centerId, onSaved, t,
 }: {
   lesson: Lesson;
   students: Student[];
   centerId: string;
-  onClose: () => void;
   onSaved: (updated: Lesson) => void;
   t: (key: string) => string;
 }) {
-  const [attendance, setAttendance] = React.useState<Record<string, boolean>>(() => ({ ...(lesson.attendance ?? {}) }));
+  const [attendance, setAttendance] = React.useState<Record<string, boolean | "late">>(() => ({ ...(lesson.attendance ?? {}) }));
   const [assignments, setAssignments] = React.useState<Assignment[]>(() => (lesson.assignments ?? []).map((a) => ({ ...a })));
   const [grades, setGrades] = React.useState<Record<string, Record<string, string>>>(() => {
     const init: Record<string, Record<string, string>> = {};
@@ -764,33 +1032,80 @@ function GradeLessonModal({
   const [newPass, setNewPass] = React.useState("5");
   const [saving, setSaving] = React.useState(false);
 
+  const saveTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  const triggerSave = React.useCallback(
+    (
+      currentAttendance: Record<string, boolean | "late">,
+      currentAssignments: Assignment[],
+      currentGrades: Record<string, Record<string, string>>
+    ) => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+      saveTimeout.current = setTimeout(async () => {
+        setSaving(true);
+        try {
+          const cleanGrades: Record<string, Record<string, number>> = {};
+          for (const s of students) {
+            const row = currentGrades[s.id] ?? {};
+            const out: Record<string, number> = {};
+            for (const a of currentAssignments) {
+              const raw = row[a.id];
+              if (raw === undefined || raw === "") continue;
+              const n = Number(raw);
+              if (!Number.isFinite(n)) continue;
+              out[a.id] = Math.max(0, Math.min(Math.round(n), a.maxScore));
+            }
+            if (Object.keys(out).length > 0) cleanGrades[s.id] = out;
+          }
+          const updated = await repo.updateLesson(centerId, lesson.id, {
+            attendance: currentAttendance,
+            assignments: currentAssignments,
+            grades: cleanGrades,
+          });
+          onSaved(updated);
+        } finally {
+          setSaving(false);
+        }
+      }, 500);
+    },
+    [centerId, lesson.id, students, onSaved]
+  );
+
   const addAssignment = () => {
     const title = newTitle.trim();
     const max = Number(newMax);
     const pass = Number(newPass);
     if (!title || !Number.isFinite(max) || max <= 0) return;
     const clampedPass = Math.max(0, Math.min(Number.isFinite(pass) ? pass : 0, max));
-    setAssignments((prev) => [...prev, { id: uid("asg"), title, maxScore: Math.round(max), passScore: Math.round(clampedPass) }]);
+    const nextAssignments = [...assignments, { id: uid("asg"), title, maxScore: Math.round(max), passScore: Math.round(clampedPass) }];
+    setAssignments(nextAssignments);
     setNewTitle(""); setNewMax("10"); setNewPass("5");
+    triggerSave(attendance, nextAssignments, grades);
   };
 
   const removeAssignment = (id: string) => {
-    setAssignments((prev) => prev.filter((a) => a.id !== id));
-    setGrades((prev) => {
-      const next: typeof prev = {};
-      for (const [sid, row] of Object.entries(prev)) {
-        const { [id]: _drop, ...rest } = row;
-        next[sid] = rest;
-      }
-      return next;
-    });
+    const nextAssignments = assignments.filter((a) => a.id !== id);
+    setAssignments(nextAssignments);
+    const nextGrades: typeof grades = {};
+    for (const [sid, row] of Object.entries(grades)) {
+      const { [id]: _drop, ...rest } = row;
+      nextGrades[sid] = rest;
+    }
+    setGrades(nextGrades);
+    triggerSave(attendance, nextAssignments, nextGrades);
   };
 
-  const setGrade = (sid: string, aid: string, value: string) =>
-    setGrades((prev) => ({ ...prev, [sid]: { ...prev[sid], [aid]: value } }));
+  const setGrade = (sid: string, aid: string, value: string) => {
+    const nextGrades = { ...grades, [sid]: { ...grades[sid], [aid]: value } };
+    setGrades(nextGrades);
+    triggerSave(attendance, assignments, nextGrades);
+  };
 
-  const toggleAttendance = (sid: string) =>
-    setAttendance((prev) => ({ ...prev, [sid]: !prev[sid] }));
+  const toggleAttendance = (sid: string) => {
+    const nextAttendance = { ...attendance, [sid]: !attendance[sid] };
+    setAttendance(nextAttendance);
+    triggerSave(nextAttendance, assignments, grades);
+  };
 
   const livePercent = (sid: string): number | null => {
     if (assignments.length === 0) return null;
@@ -808,33 +1123,15 @@ function GradeLessonModal({
     return Math.round((earned / possible) * 100);
   };
 
-  const onSave = async () => {
-    setSaving(true);
-    try {
-      const cleanGrades: Record<string, Record<string, number>> = {};
-      for (const s of students) {
-        const row = grades[s.id] ?? {};
-        const out: Record<string, number> = {};
-        for (const a of assignments) {
-          const raw = row[a.id];
-          if (raw === undefined || raw === "") continue;
-          const n = Number(raw);
-          if (!Number.isFinite(n)) continue;
-          out[a.id] = Math.max(0, Math.min(Math.round(n), a.maxScore));
-        }
-        if (Object.keys(out).length > 0) cleanGrades[s.id] = out;
-      }
-      const updated = await repo.updateLesson(centerId, lesson.id, { attendance, assignments, grades: cleanGrades });
-      onSaved(updated);
-      onClose();
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
-    <Modal open onClose={onClose} title={lesson.topic} description={formatDate(lesson.date)} className="max-w-3xl">
-      <div className="mt-2 space-y-5">
+    <div className="p-4 relative">
+      {saving && (
+        <div className="absolute top-4 right-4 flex items-center gap-2 text-xs font-medium text-brand-300 bg-brand-500/10 px-3 py-1.5 rounded-full">
+          <div className="h-3 w-3 rounded-full border-2 border-brand-400 border-r-transparent animate-spin" />
+          {t("journal.grade.save")}...
+        </div>
+      )}
+      <div className="space-y-5">
         {/* Tests manager */}
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-medium text-white/60">
@@ -895,7 +1192,7 @@ function GradeLessonModal({
                 const present = attendance[s.id] !== false;
                 const pct = livePercent(s.id);
                 return (
-                  <tr key={s.id} className="border-b border-white/[0.04] last:border-0">
+                  <tr key={s.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]">
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <Avatar name={s.name} color={s.avatarColor} size="sm" />
@@ -906,8 +1203,8 @@ function GradeLessonModal({
                       <button type="button" onClick={() => toggleAttendance(s.id)}
                         className={
                           present
-                            ? "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
-                            : "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-white/30"
+                            ? "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-emerald-300 transition-colors"
+                            : "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-white/30 transition-colors hover:bg-white/10"
                         }
                         title={present ? t("journal.attendance.studentPresent") : t("journal.attendance.studentAbsent")}>
                         {present ? <CheckCircle2 className="h-4 w-4" /> : <X className="h-4 w-4" />}
@@ -952,13 +1249,8 @@ function GradeLessonModal({
             </tbody>
           </table>
         </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" type="button" onClick={onClose}>{t("journal.cancel")}</Button>
-          <Button type="button" loading={saving} onClick={onSave}>{t("journal.grade.save")}</Button>
-        </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 

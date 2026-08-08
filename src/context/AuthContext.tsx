@@ -370,14 +370,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         subdomain,
         description,
         logoUrl,
-        ownerEmail: email.toLowerCase(),
+        ownerEmail: email,
       });
       const avatarColor = pickColor(cred.user.uid);
       const newUser = await firestoreRepository.createUser({
         id: cred.user.uid,
         centerId: newCenter.id,
         name: ownerName,
-        email: email.toLowerCase(),
+        email: email,
         username: email.split("@")[0].toLowerCase(),
         role: "owner" as Role,
         avatarColor,
@@ -404,7 +404,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subdomain,
       description,
       logoUrl,
-      ownerEmail: fbUser.email?.toLowerCase(),
+      ownerEmail: fbUser.email || undefined,
     });
     const avatarColor = pickColor(fbUser.uid);
 

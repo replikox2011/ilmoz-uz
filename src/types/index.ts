@@ -161,8 +161,8 @@ export interface Lesson {
   topic: string;
   homework?: string;
   notes?: string;
-  /** studentId → present */
-  attendance: Record<string, boolean>;
+  /** studentId → present (true) / absent (false) / late ("late") */
+  attendance: Record<string, boolean | "late">;
   /** Graded tasks for this lesson; each has its own max score. */
   assignments?: Assignment[];
   /** studentId → (assignmentId → score earned). */
