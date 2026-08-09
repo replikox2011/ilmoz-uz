@@ -156,6 +156,97 @@ export function SettingsPage() {
       </GlassCard>
 
 
+      {/* Plans & Billing */}
+      <GlassCard className="p-6 space-y-6">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-white/40">Tarif Rejalari (Plans & Billing)</h2>
+          <p className="text-xs text-white/35 mt-0.5">Kengaytirilgan imkoniyatlar va limitlarni boshqarish</p>
+        </div>
+
+        {/* Current Plan Stats */}
+        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div>
+            <p className="text-xs text-white/40">Joriy tarif</p>
+            <p className="text-lg font-bold text-brand-300">Start (Tekin)</p>
+          </div>
+          <div>
+            <p className="text-xs text-white/40">O'quvchilar limiti</p>
+            <p className="text-lg font-bold text-white">12 / 15</p>
+          </div>
+          <div className="col-span-2 border-t border-white/[0.06] pt-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-white/40">SMS Balans</p>
+              <p className="text-sm font-semibold text-white">0 SMS (0.00 USD)</p>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 text-[11px] border border-white/10 hover:bg-white/5">
+              SMS Balansni to'ldirish
+            </Button>
+          </div>
+        </div>
+
+        {/* Plans Grid */}
+        <div className="grid gap-3 sm:grid-cols-3">
+          {/* Start Plan */}
+          <div className="rounded-2xl border border-brand-500/20 bg-brand-500/[0.02] p-4 flex flex-col justify-between relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-brand-500/20 px-2 py-0.5 text-[9px] font-medium text-brand-300 rounded-bl-lg">
+              Faol
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Start</h3>
+              <p className="mt-1 text-xs text-white/50">Kichik guruhlar va yakka tartibdagi o'qituvchilar uchun</p>
+            </div>
+            <div className="mt-4">
+              <p className="text-lg font-bold text-white">0 USD <span className="text-[10px] font-normal text-white/40">/oy</span></p>
+              <ul className="mt-2 space-y-1 text-[11px] text-white/60">
+                <li>• 15 tagacha o'quvchi</li>
+                <li>• 1 ta filial (markaz)</li>
+                <li>• Asosiy jurnal va hisobotlar</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Growth Plan */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.01] p-4 flex flex-col justify-between hover:border-brand-500/30 transition">
+            <div>
+              <h3 className="text-sm font-bold text-white">Rivojlanish (Growth)</h3>
+              <p className="mt-1 text-xs text-white/50">Rivojlanayotgan o'quv markazlari uchun</p>
+            </div>
+            <div className="mt-4">
+              <p className="text-lg font-bold text-brand-300">19 USD <span className="text-[10px] font-normal text-white/40">/oy</span></p>
+              <ul className="mt-2 space-y-1 text-[11px] text-white/60">
+                <li>• 100 tagacha o'quvchi</li>
+                <li>• 2 ta filial (markaz)</li>
+                <li>• SMS xabarnomalar</li>
+                <li>• Telegram-bot orqali davomat</li>
+              </ul>
+              <Button className="mt-3 w-full h-8 text-[11px]" size="sm" variant="ghost">
+                Tanlash
+              </Button>
+            </div>
+          </div>
+
+          {/* Pro Plan */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.01] p-4 flex flex-col justify-between hover:border-brand-500/30 transition">
+            <div>
+              <h3 className="text-sm font-bold text-white">Professional (Pro)</h3>
+              <p className="mt-1 text-xs text-white/50">Katta o'quv markazlari va maktablar uchun</p>
+            </div>
+            <div className="mt-4">
+              <p className="text-lg font-bold text-brand-300">49 USD <span className="text-[10px] font-normal text-white/40">/oy</span></p>
+              <ul className="mt-2 space-y-1 text-[11px] text-white/60">
+                <li>• Cheksiz o'quvchi</li>
+                <li>• Cheksiz filial</li>
+                <li>• Brendlashtirish (Logo & Ranglar)</li>
+                <li>• Moliyaviy tahlillar</li>
+              </ul>
+              <Button className="mt-3 w-full h-8 text-[11px]" size="sm" variant="ghost">
+                Tanlash
+              </Button>
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+
       {/* Login page customization — directors & owners only (branding = center identity) */}
       {canEditCenter && <LoginPageCustomizer />}
 
