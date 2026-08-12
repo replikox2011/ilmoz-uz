@@ -13,7 +13,7 @@ import { doc, getDoc, updateDoc, setDoc, getDocs, query, collection, where, limi
 import { auth, db } from "../lib/firebase";
 import { Center, CenterNetwork, Role, User } from "../types";
 import { firestoreRepository } from "../data/firestoreRepository";
-import { extractSubdomain, ROOT_DOMAIN } from "../lib/subdomain";
+import { extractSubdomain, isReservedSubdomain, ROOT_DOMAIN } from "../lib/subdomain";
 
 // ---------------------------------------------------------------------------
 // Avatar color palette — deterministic pick from Firebase UID
@@ -49,6 +49,10 @@ interface AuthContextValue {
   activeSubdomain: string | null;
   /** centerId that owns the active subdomain; null on the root domain */
   subdomainCenterId: string | null;
+  /** True when on a subdomain that does NOT exist in the database */
+  subdomainNotFound: boolean;
+  /** True when subdomain lookup has finished */
+  subdomainChecked: boolean;
   /** The branch network this center belongs to (null if not in a network) */
   network: CenterNetwork | null;
   /** True if the current center is the headquarters of a network */
@@ -97,14 +101,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const [subdomainCenterId, setSubdomainCenterId] = React.useState<string | null>(null);
+  const [subdomainChecked, setSubdomainChecked] = React.useState(false);
 
   const registering = React.useRef(false);
 
   // ── Resolve subdomain → centerId on mount ────────────────────────────────
   React.useEffect(() => {
-    if (!activeSubdomain) return;
-    firestoreRepository.getSubdomainCenterId(activeSubdomain).then(setSubdomainCenterId);
+    if (!activeSubdomain) {
+      setSubdomainChecked(true);
+      return;
+    }
+    setSubdomainChecked(false);
+    firestoreRepository.getSubdomainCenterId(activeSubdomain)
+      .then((id) => {
+        setSubdomainCenterId(id);
+        setSubdomainChecked(true);
+      })
+      .catch(() => {
+        setSubdomainCenterId(null);
+        setSubdomainChecked(true);
+      });
   }, [activeSubdomain]);
+
+  const subdomainNotFound = React.useMemo(() => {
+    if (!activeSubdomain) return false;
+    if (isReservedSubdomain(activeSubdomain)) return false;
+    return subdomainChecked && subdomainCenterId === null;
+  }, [activeSubdomain, subdomainChecked, subdomainCenterId]);
 
   // ── Load Firestore profile for a Firebase user ──────────────────────────
   const loadProfile = React.useCallback(
@@ -478,6 +501,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     needsPhoneVerification,
     activeSubdomain,
     subdomainCenterId,
+    subdomainNotFound,
+    subdomainChecked,
     network,
     isHeadquarters: center?.isHeadquarters ?? false,
     signInWithGoogle,

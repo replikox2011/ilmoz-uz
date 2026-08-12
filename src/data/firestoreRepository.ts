@@ -48,11 +48,29 @@ function fromSnap<T>(d: any): T {
 }
 
 export class FirestoreRepository implements Repository {
+  private centerCache = new Map<string, Center | null>();
+  private subdomainCache = new Map<string, string | null>();
+
   // ── Centers ───────────────────────────────────────────────────────────────
   async getCenter(id: string) {
+    if (this.centerCache.has(id)) {
+      return this.centerCache.get(id) ?? null;
+    }
     const s = await getDoc(doc(db, "centers", id));
-    return s.exists() ? fromSnap<Center>(s) : null;
+    const c = s.exists() ? fromSnap<Center>(s) : null;
+    this.centerCache.set(id, c);
+    return c;
   }
+
+  clearCache(centerId?: string) {
+    if (centerId) {
+      this.centerCache.delete(centerId);
+    } else {
+      this.centerCache.clear();
+      this.subdomainCache.clear();
+    }
+  }
+
   async createCenter(input: { name: string; subdomain?: string; description?: string; logoUrl?: string; currency?: string; id?: string; ownerEmail?: string }) {
     const id = (input as any).id ?? genId("center");
     const c: Center = {
@@ -75,9 +93,11 @@ export class FirestoreRepository implements Repository {
       batch.set(doc(db, "centers", id), strip(c as any));
       batch.set(doc(db, "subdomains", input.subdomain), { centerId: id });
       await batch.commit();
+      this.subdomainCache.set(input.subdomain, id);
     } else {
       await setDoc(doc(db, "centers", id), strip(c as any));
     }
+    this.centerCache.set(id, c);
     return c;
   }
   async isSubdomainAvailable(subdomain: string) {
@@ -86,10 +106,16 @@ export class FirestoreRepository implements Repository {
     return !snap.exists();
   }
   async getSubdomainCenterId(subdomain: string) {
+    if (this.subdomainCache.has(subdomain)) {
+      return this.subdomainCache.get(subdomain) ?? null;
+    }
     const snap = await getDoc(doc(db, "subdomains", subdomain));
-    return snap.exists() ? (snap.data() as { centerId: string }).centerId : null;
+    const centerId = snap.exists() ? (snap.data() as { centerId: string }).centerId : null;
+    this.subdomainCache.set(subdomain, centerId);
+    return centerId;
   }
   async updateCenter(centerId: string, patch: Partial<Omit<Center, "id">>) {
+    this.centerCache.delete(centerId);
     await updateDoc(doc(db, "centers", centerId), strip(patch as any));
     return (await this.getCenter(centerId))!;
   }

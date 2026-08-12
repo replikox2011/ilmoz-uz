@@ -10,7 +10,6 @@ import { firestoreRepository } from "../../data/firestoreRepository";
 import { Center } from "../../types";
 import { buildRootUrl } from "../../lib/subdomain";
 import { Turnstile } from "../../components/ui/Turnstile";
-
 export function LoginPage() {
   const { signInWithGoogle, signInWithLogin, activeSubdomain, subdomainCenterId } = useAuth();
   const { t } = useI18n();

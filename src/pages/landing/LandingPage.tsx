@@ -1599,7 +1599,7 @@ export function LandingPage() {
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-4 -mx-4 md:grid md:grid-cols-3 md:items-start md:gap-6 md:px-0 md:mx-0">
             <PriceCard
               name={t('landing.pricing.starter')}
-              price="$49"
+              price={t('landing.pricing.starter.price')}
               per={t('landing.pricing.perMonth')}
               features={[
                 t('landing.pricing.starter.f1'),
@@ -1613,7 +1613,7 @@ export function LandingPage() {
               highlighted
               badge={t('landing.pricing.popular')}
               name={t('landing.pricing.pro')}
-              price="$149"
+              price={t('landing.pricing.pro.price')}
               per={t('landing.pricing.perMonth')}
               features={[
                 t('landing.pricing.pro.f1'),

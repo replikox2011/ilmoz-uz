@@ -45,6 +45,7 @@ import { AdminSecurityPage } from "./pages/ilmoz-admin/AdminSecurityPage";
 import { AdminSettingsPage } from "./pages/ilmoz-admin/AdminSettingsPage";
 import { CustomizeLoginPage } from "./pages/onboarding/CustomizeLoginPage";
 import { LandingPage } from "./pages/landing/LandingPage";
+import { CenterNotFoundPage } from "./pages/error/CenterNotFoundPage";
 import { AdminRootProvider } from "./pages/ilmoz-admin/AdminRootContext";
 import { buildSubdomainUrl } from "./lib/subdomain";
 import { isPlatformAdmin } from "./lib/access";
@@ -277,60 +278,94 @@ const adminRoutes = (
 );
 
 // =============================================================================
+function AppRoutes() {
+  const { subdomainNotFound, activeSubdomain } = useAuth();
+
+  if (subdomainNotFound && activeSubdomain) {
+    return <CenterNotFoundPage subdomain={activeSubdomain} />;
+  }
+
+  return (
+    <Routes>
+      {/* ── Auth ── */}
+      <Route path="/login"    element={<PublicOnly><LoginPage /></PublicOnly>} />
+      <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
+      <Route path="/setup"    element={<SetupOnly><SetupCenterPage /></SetupOnly>} />
+      <Route path="/verify-phone" element={<VerifyOnly><VerifyPhonePage /></VerifyOnly>} />
+      <Route path="/onboarding/customize" element={<CustomizeOnly><CustomizeLoginPage /></CustomizeOnly>} />
+      <Route path="/landing" element={<LandingRoute />} />
+      <Route path="/videoforaward2026" element={<VideoRedirect />} />
+
+      {/* ── Root shell — isadm gets AdminLayout, everyone else gets AppShell ── */}
+      <Route path="/" element={<RootShell />}>
+        {adminRoutes}
+        <Route index element={<HomeRoute />} />
+        <Route path="users"         element={<UsersRoute />} />
+        <Route path="groups"        element={<GroupsPage />} />
+        <Route path="groups/:id"    element={<GroupDetailPage />} />
+        <Route path="schedule"      element={<SchedulePage />} />
+        <Route path="tests"         element={<TestsPage />} />
+        <Route path="students"      element={<StudentsPage />} />
+        <Route path="students/:username" element={<StudentProfilePage />} />
+        <Route path="teachers"      element={<TeachersPage />} />
+        <Route path="courses"         element={<CoursesPage />} />
+        <Route path="courses/:id"    element={<CourseDetailPage />} />
+        <Route path="finance"       element={<FinancePage />} />
+        <Route path="analytics"     element={<AnalyticsRoute />} />
+        <Route path="ai"            element={<AiRoute />} />
+        <Route path="children"      element={<ChildrenPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="settings"      element={<SettingsRoute />} />
+      </Route>
+
+      {/* ── Ilmoz admin console — ismod (moderator) at "/ilmoz-admin" ── */}
+      <Route
+        path="/ilmoz-admin"
+        element={
+          <AdminOnly>
+            <AdminRootProvider base="/ilmoz-admin">
+              <AdminLayout />
+            </AdminRootProvider>
+          </AdminOnly>
+        }
+      >
+        {adminRoutes}
+        <Route index element={<AdminDashboardPage />} />
+        <Route path="analytics" element={<AdminAnalyticsPage />} />
+        <Route path="ai" element={<AdminAiPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
-        {/* ── Auth ── */}
-        <Route path="/login"    element={<PublicOnly><LoginPage /></PublicOnly>} />
-        <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
-        <Route path="/setup"    element={<SetupOnly><SetupCenterPage /></SetupOnly>} />
-        <Route path="/verify-phone" element={<VerifyOnly><VerifyPhonePage /></VerifyOnly>} />
-        <Route path="/onboarding/customize" element={<CustomizeOnly><CustomizeLoginPage /></CustomizeOnly>} />
-        <Route path="/landing" element={<LandingRoute />} />
-
-        {/* ── Root shell — isadm gets AdminLayout, everyone else gets AppShell ── */}
-        <Route path="/" element={<RootShell />}>
-          {adminRoutes}
-          <Route index element={<HomeRoute />} />
-          <Route path="users"         element={<UsersRoute />} />
-          <Route path="groups"        element={<GroupsPage />} />
-          <Route path="groups/:id"    element={<GroupDetailPage />} />
-          <Route path="schedule"      element={<SchedulePage />} />
-          <Route path="tests"         element={<TestsPage />} />
-          <Route path="students"      element={<StudentsPage />} />
-          <Route path="students/:username" element={<StudentProfilePage />} />
-          <Route path="teachers"      element={<TeachersPage />} />
-          <Route path="courses"         element={<CoursesPage />} />
-          <Route path="courses/:id"    element={<CourseDetailPage />} />
-          <Route path="finance"       element={<FinancePage />} />
-          <Route path="analytics"     element={<AnalyticsRoute />} />
-          <Route path="ai"            element={<AiRoute />} />
-          <Route path="children"      element={<ChildrenPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="settings"      element={<SettingsRoute />} />
-        </Route>
-
-        {/* ── Ilmoz admin console — ismod (moderator) at "/ilmoz-admin" ── */}
-        <Route
-          path="/ilmoz-admin"
-          element={
-            <AdminOnly>
-              <AdminRootProvider base="/ilmoz-admin">
-                <AdminLayout />
-              </AdminRootProvider>
-            </AdminOnly>
-          }
-        >
-          {adminRoutes}
-          <Route index element={<AdminDashboardPage />} />
-          <Route path="analytics" element={<AdminAnalyticsPage />} />
-          <Route path="ai" element={<AdminAiPage />} />
-          <Route path="settings" element={<AdminSettingsPage />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AppRoutes />
     </AuthProvider>
+  );
+}
+
+function VideoRedirect() {
+  React.useEffect(() => {
+    // Bu yerga YouTube videongiz havolasini kiriting
+    window.location.replace("https://www.youtube.com");
+  }, []);
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      height: '100vh', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      background: '#05060A', 
+      color: '#fff', 
+      fontFamily: 'sans-serif' 
+    }}>
+      Youtubega yo'naltirilmoqda...
+    </div>
   );
 }

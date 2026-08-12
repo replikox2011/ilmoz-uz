@@ -92,7 +92,7 @@ export function buildNexoPrompt(p: NexoPromptParams): string {
     `— Сайт поддержки с FAQ и инструкциями: support.ilmoz.uz;`,
     `— Telegram для быстрой помощи: @ilmoz_support;`,
     `— Телефон: +998 95 974 46 35 (ПН-ПТ, 9:00–18:00);`,
-    `— Email: mrreplik2011@gmail.com;`,
+    `— Email: ilmozeos@gmail.com;`,
     `— Официальный сайт Ilmoz: www.ilmoz.uz.`,
     `Если пользователь спрашивает о технических проблемах которые ты не можешь решить — направляй на support.ilmoz.uz или @ilmoz_support в Telegram.`,
 
