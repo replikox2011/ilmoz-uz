@@ -8,7 +8,7 @@ const MAX_STORED = 100;
 const MAX_TOOL_ROUNDS = 6;
 
 // ── Model definitions ─────────────────────────────────────────────────────────
-export type CopilotModel = "gemma-4-26b-free";
+export type CopilotModel = "openrouter-free" | "gemma-4-26b-free";
 
 export interface ModelConfig {
   id: CopilotModel;
@@ -18,6 +18,7 @@ export interface ModelConfig {
 }
 
 export const COPILOT_MODELS: ModelConfig[] = [
+  { id: "openrouter-free", label: "Auto Free Router", sublabel: "OpenRouter", apiModel: "openrouter/free" },
   { id: "gemma-4-26b-free", label: "Gemma 4 26B (Free)", sublabel: "OpenRouter", apiModel: "google/gemma-4-26b-a4b-it:free" },
 ];
 
@@ -28,7 +29,7 @@ export function loadSavedModel(): CopilotModel {
     const v = localStorage.getItem(MODEL_STORAGE_KEY) as CopilotModel | null;
     if (v && COPILOT_MODELS.some(m => m.id === v)) return v;
   } catch { /* ignore */ }
-  return "gemma-4-26b-free";
+  return "openrouter-free";
 }
 
 export function saveModel(model: CopilotModel) {
