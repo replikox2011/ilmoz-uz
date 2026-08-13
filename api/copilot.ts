@@ -15,14 +15,20 @@ export default async function handler(req: Request) {
     const { provider, ...payload } = body;
 
     const isGroq = provider === "groq";
-    const apiKey = isGroq
+    let apiKey = isGroq
       ? (process.env.GROQ_API_KEY || process.env.REACT_APP_GROQ_API_KEY)
       : (process.env.OPENROUTER_API_KEY || process.env.REACT_APP_OPENROUTER_API_KEY);
+
+    if (payload.model === "poolside/laguna-s-2.1:free") {
+      apiKey = process.env.LAGUNA_API_KEY || apiKey;
+    } else if (payload.model === "nvidia/nemotron-3-ultra-550b-a55b:free") {
+      apiKey = process.env.NEMOTRON_API_KEY || apiKey;
+    }
 
     if (!apiKey) {
       return new Response(
         JSON.stringify({
-          error: `API key for ${isGroq ? "Groq" : "OpenRouter"} is not set in server environment.`,
+          error: `API key for ${payload.model || (isGroq ? "Groq" : "OpenRouter")} is not set in server environment.`,
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );

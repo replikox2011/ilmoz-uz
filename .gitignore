@@ -7,3 +7,5 @@ CLAUDE.md
 .env.local
 .antigravitycli
 
+.vercel
+.env*

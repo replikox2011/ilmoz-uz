@@ -8,7 +8,7 @@ const MAX_STORED = 100;
 const MAX_TOOL_ROUNDS = 6;
 
 // ── Model definitions ─────────────────────────────────────────────────────────
-export type CopilotModel = "ling-3-flash-free";
+export type CopilotModel = "laguna-free" | "nemotron-free";
 
 export interface ModelConfig {
   id: CopilotModel;
@@ -18,7 +18,8 @@ export interface ModelConfig {
 }
 
 export const COPILOT_MODELS: ModelConfig[] = [
-  { id: "ling-3-flash-free", label: "Ling 3.0 Flash (Free)", sublabel: "OpenRouter", apiModel: "inclusionai/ling-3.0-flash:free" },
+  { id: "laguna-free", label: "Poolside Laguna 2.1 (Free)", sublabel: "OpenRouter", apiModel: "poolside/laguna-s-2.1:free" },
+  { id: "nemotron-free", label: "NVIDIA Nemotron 3 (Free)", sublabel: "OpenRouter", apiModel: "nvidia/nemotron-3-ultra-550b-a55b:free" },
 ];
 
 const MODEL_STORAGE_KEY = "ilmoz:copilot:model";
@@ -28,7 +29,7 @@ export function loadSavedModel(): CopilotModel {
     const v = localStorage.getItem(MODEL_STORAGE_KEY) as CopilotModel | null;
     if (v && COPILOT_MODELS.some(m => m.id === v)) return v;
   } catch { /* ignore */ }
-  return "ling-3-flash-free";
+  return "laguna-free";
 }
 
 export function saveModel(model: CopilotModel) {
