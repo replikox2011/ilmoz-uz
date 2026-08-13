@@ -139,14 +139,21 @@ async function streamOnce(
   const reader = resp.body!.getReader();
   const decoder = new TextDecoder();
   let text = "";
+  let buffer = "";
   const toolMap: Record<number, { id: string; name: string; arguments: string }> = {};
 
   outer: while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    for (const line of decoder.decode(value, { stream: true }).split("\n")) {
-      if (!line.startsWith("data: ")) continue;
-      const raw = line.slice(6).trim();
+    
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (!cleanLine.startsWith("data: ")) continue;
+      const raw = cleanLine.slice(6).trim();
       if (raw === "[DONE]") break outer;
       try {
         const delta = JSON.parse(raw)?.choices?.[0]?.delta;
