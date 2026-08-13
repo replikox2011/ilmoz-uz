@@ -19,10 +19,8 @@ export default async function handler(req: Request) {
       ? (process.env.GROQ_API_KEY || process.env.REACT_APP_GROQ_API_KEY)
       : (process.env.OPENROUTER_API_KEY || process.env.REACT_APP_OPENROUTER_API_KEY);
 
-    if (payload.model === "poolside/laguna-s-2.1:free") {
+    if (payload.model === "qwen/qwen-2-7b-instruct:free" || payload.model === "meta-llama/llama-3-8b-instruct:free") {
       apiKey = process.env.LAGUNA_API_KEY || apiKey;
-    } else if (payload.model === "nvidia/nemotron-3-ultra-550b-a55b:free") {
-      apiKey = process.env.NEMOTRON_API_KEY || apiKey;
     }
 
     if (!apiKey) {
