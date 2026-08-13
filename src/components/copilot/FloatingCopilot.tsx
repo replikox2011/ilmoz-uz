@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence as _AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, RotateCcw, Copy, Check, Bot } from "lucide-react";
+import { Sparkles, X, Send, RotateCcw, Copy, Check } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
 import { useCopilotChat, ChatMessage, CopilotModel, COPILOT_MODELS, loadSavedModel, saveModel } from "../../hooks/useCopilotChat";
