@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence as _AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, RotateCcw, Copy, Check, Zap, Brain, Bot } from "lucide-react";
+import { Sparkles, X, Send, RotateCcw, Copy, Check, Bot } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
 import { useCopilotChat, ChatMessage, CopilotModel, COPILOT_MODELS, loadSavedModel, saveModel } from "../../hooks/useCopilotChat";
@@ -221,10 +221,8 @@ export function FloatingCopilot() {
 
 // ── Mini model picker (icon-only with tooltip dropdown) ───────────────────────
 const MINI_ICONS: Record<string, React.ReactNode> = {
-  "groq-fast": <Zap className="h-3.5 w-3.5" />,
-  "groq-pro": <Brain className="h-3.5 w-3.5" />,
-  "gpt-4o": <Bot className="h-3.5 w-3.5" />,
-  "ling-3-flash-free": <Sparkles className="h-3.5 w-3.5" />,
+  "laguna-free": <Sparkles className="h-3.5 w-3.5" />,
+  "nemotron-free": <Bot className="h-3.5 w-3.5" />,
 };
 
 function MiniModelPicker({ value, onChange }: { value: CopilotModel; onChange: (m: CopilotModel) => void }) {
