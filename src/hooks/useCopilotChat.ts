@@ -8,7 +8,7 @@ const MAX_STORED = 100;
 const MAX_TOOL_ROUNDS = 6;
 
 // ── Model definitions ─────────────────────────────────────────────────────────
-export type CopilotModel = "qwen-2-7b-free" | "llama-3-8b-free";
+export type CopilotModel = "gemma-2-9b-free";
 
 export interface ModelConfig {
   id: CopilotModel;
@@ -18,8 +18,7 @@ export interface ModelConfig {
 }
 
 export const COPILOT_MODELS: ModelConfig[] = [
-  { id: "qwen-2-7b-free", label: "Qwen 2 7B (Free)", sublabel: "OpenRouter", apiModel: "qwen/qwen-2-7b-instruct:free" },
-  { id: "llama-3-8b-free", label: "Llama 3 8B (Free)", sublabel: "OpenRouter", apiModel: "meta-llama/llama-3-8b-instruct:free" },
+  { id: "gemma-2-9b-free", label: "Gemma 2 9B (Free)", sublabel: "OpenRouter", apiModel: "google/gemma-2-9b-it:free" },
 ];
 
 const MODEL_STORAGE_KEY = "ilmoz:copilot:model";
@@ -29,7 +28,7 @@ export function loadSavedModel(): CopilotModel {
     const v = localStorage.getItem(MODEL_STORAGE_KEY) as CopilotModel | null;
     if (v && COPILOT_MODELS.some(m => m.id === v)) return v;
   } catch { /* ignore */ }
-  return "qwen-2-7b-free";
+  return "gemma-2-9b-free";
 }
 
 export function saveModel(model: CopilotModel) {

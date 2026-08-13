@@ -19,7 +19,7 @@ export default async function handler(req: Request) {
       ? (process.env.GROQ_API_KEY || process.env.REACT_APP_GROQ_API_KEY)
       : (process.env.OPENROUTER_API_KEY || process.env.REACT_APP_OPENROUTER_API_KEY);
 
-    if (payload.model === "qwen/qwen-2-7b-instruct:free" || payload.model === "meta-llama/llama-3-8b-instruct:free") {
+    if (payload.model === "google/gemma-2-9b-it:free") {
       apiKey = process.env.LAGUNA_API_KEY || apiKey;
     }
 

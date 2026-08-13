@@ -221,8 +221,7 @@ export function FloatingCopilot() {
 
 // ── Mini model picker (icon-only with tooltip dropdown) ───────────────────────
 const MINI_ICONS: Record<string, React.ReactNode> = {
-  "laguna-free": <Sparkles className="h-3.5 w-3.5" />,
-  "nemotron-free": <Bot className="h-3.5 w-3.5" />,
+  "gemma-2-9b-free": <Sparkles className="h-3.5 w-3.5" />,
 };
 
 function MiniModelPicker({ value, onChange }: { value: CopilotModel; onChange: (m: CopilotModel) => void }) {
