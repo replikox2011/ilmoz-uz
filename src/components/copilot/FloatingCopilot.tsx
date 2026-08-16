@@ -12,7 +12,6 @@ import { CenterSnapshot } from "./copilotTools";
 const AnimatePresence = _AnimatePresence as any as React.FC<{
   mode?: string; children?: React.ReactNode;
 }>;
-
 export function FloatingCopilot() {
   const { user, center } = useAuth();
   const { t } = useI18n();

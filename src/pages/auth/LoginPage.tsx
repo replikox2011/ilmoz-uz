@@ -16,7 +16,6 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [centerBrand, setCenterBrand] = React.useState<Center | null>(null);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
-
   React.useEffect(() => {
     if (!subdomainCenterId) return;
     firestoreRepository.getCenter(subdomainCenterId).then(c => setCenterBrand(c));
