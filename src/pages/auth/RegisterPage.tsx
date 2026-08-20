@@ -19,16 +19,10 @@ import { useSubdomainAvailability } from "../../hooks/useSubdomainAvailability";
 import { LogoUpload } from "../../components/ui/LogoUpload";
 import { uid, cn } from "../../lib/utils";
 import { Turnstile } from "../../components/ui/Turnstile";
-
-// Framer v11 shim
 const AP = AnimatePresence as any as React.FC<{
   mode?: string; children?: React.ReactNode;
 }>;
-
-// ── Steps ─────────────────────────────────────────────────────────────────────
 type Step = "method" | "center" | "account";
-
-// slide direction for animations
 const SLIDE = {
   enter: (dir: number) => ({ x: dir * 40, opacity: 0 }),
   center: { x: 0, opacity: 1 },
@@ -51,10 +45,10 @@ export function RegisterPage() {
     () =>
       z.object({
         centerName: z.string().min(2, t("auth.register.validationCenterName")),
-        ownerName:  z.string().min(2, t("auth.register.validationOwnerName")),
-        email:      z.string().email(t("auth.register.validationEmail")),
-        password:   z.string().min(8, t("auth.register.validationPassword")),
-        confirm:    z.string(),
+        ownerName: z.string().min(2, t("auth.register.validationOwnerName")),
+        email: z.string().email(t("auth.register.validationEmail")),
+        password: z.string().min(8, t("auth.register.validationPassword")),
+        confirm: z.string(),
       }).refine(d => d.password === d.confirm, {
         message: t("auth.register.validationPasswordMatch"),
         path: ["confirm"],
@@ -70,17 +64,17 @@ export function RegisterPage() {
     });
 
   // ── Local state ───────────────────────────────────────────────────────────
-  const [step, setStep]           = React.useState<Step>("method");
-  const [dir, setDir]             = React.useState(1);   // 1 = forward, -1 = back
-  const [showPwd, setShowPwd]     = React.useState(false);
+  const [step, setStep] = React.useState<Step>("method");
+  const [dir, setDir] = React.useState(1);   // 1 = forward, -1 = back
+  const [showPwd, setShowPwd] = React.useState(false);
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = React.useState(false);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
 
-  const [subdomain, setSubdomain]         = React.useState("");
+  const [subdomain, setSubdomain] = React.useState("");
   const [subdomainEdited, setSubdomainEdited] = React.useState(false);
-  const [description, setDescription]    = React.useState("");
-  const [logoUrl, setLogoUrl]             = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [logoUrl, setLogoUrl] = React.useState("");
   const tempCenterId = React.useRef(uid("tmp"));
 
   const { available, checking, suggestions } = useSubdomainAvailability(subdomain);
@@ -119,7 +113,7 @@ export function RegisterPage() {
       setServerError("That subdomain is already taken. Please choose another.");
       return;
     }
-    
+
     try {
       await registerWithEmail(
         values.centerName, values.ownerName,

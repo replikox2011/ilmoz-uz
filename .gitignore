@@ -6,6 +6,5 @@ CLAUDE.md
 .DS_Store
 .env.local
 .antigravitycli
-
 .vercel
 .env*

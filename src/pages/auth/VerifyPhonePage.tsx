@@ -10,9 +10,7 @@ import { AuthLayout } from "./AuthLayout";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
-
 let recaptchaVerifier: RecaptchaVerifier | null = null;
-
 function getRecaptcha(): RecaptchaVerifier {
   if (!recaptchaVerifier) {
     recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-verify", {
@@ -21,9 +19,7 @@ function getRecaptcha(): RecaptchaVerifier {
   }
   return recaptchaVerifier;
 }
-
 type Step = "send" | "otp";
-
 export function VerifyPhonePage() {
   const { user, markPhoneVerified, logout } = useAuth();
   const [step, setStep] = React.useState<Step>("send");
