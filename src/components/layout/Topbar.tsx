@@ -162,93 +162,12 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-30 px-4 pt-4">
-      <div className="glass glass-highlight grid grid-cols-3 items-center rounded-3xl px-4 py-2 shadow-glass">
+      <div className="glass glass-highlight flex items-center justify-between rounded-3xl px-4 py-2 shadow-glass">
         {/* Left Section */}
         <div className="flex items-center">
           <span className="truncate text-sm font-semibold text-white/70 pl-1">
             {center?.name ?? "Ilmoz"}
           </span>
-        </div>
-
-        {/* Center: Search Input Container */}
-        <div ref={containerRef} className="relative w-full max-w-md mx-auto">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={e => {
-              setQuery(e.target.value);
-              setIsOpen(true);
-            }}
-            onFocus={() => setIsOpen(true)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("topbar.searchPlaceholder")}
-            className="h-10 w-full rounded-2xl border border-white/10 bg-white/[0.03] pl-10 pr-16 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-brand-400/50 focus:bg-white/[0.05]"
-          />
-          <span className="absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/40 sm:flex">
-            <Command className="h-3 w-3" /> K
-          </span>
-
-          {/* Inline Dropdown Panel */}
-          {isOpen && (
-            <div className="absolute top-full left-0 mt-2 w-full max-h-[350px] overflow-y-auto rounded-3xl p-2 z-50 border border-white/20 bg-white/10 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
-              {results.length === 0 ? (
-                <div className="py-8 text-center text-sm text-white/40">
-                  {t("topbar.noResults")} «{query}»
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {results.map((item, idx) => {
-                    const isSelected = idx === selectedIndex;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => handleSelect(item)}
-                        onMouseEnter={() => setSelectedIndex(idx)}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all duration-150",
-                          isSelected
-                            ? "bg-brand-500/20 text-white ring-1 ring-brand-500/30"
-                            : "text-white/70 hover:bg-white/[0.03] hover:text-white"
-                        )}
-                      >
-                        {item.type === "student" ? (
-                          <Avatar name={item.title} color={item.avatarColor} size="sm" />
-                        ) : (
-                          <div className={cn(
-                            "grid h-8 w-8 place-items-center rounded-xl bg-white/[0.04]",
-                            isSelected && "bg-brand-500/10 text-brand-300"
-                          )}>
-                            {item.type === "group" && <Users className="h-4 w-4" />}
-                            {item.type === "navigation" && (item.icon ? <item.icon className="h-4 w-4" /> : <Command className="h-4 w-4" />)}
-                          </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{item.title}</p>
-                          {item.subtitle && (
-                            <p className="text-xs text-white/45 truncate mt-0.5">{item.subtitle}</p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Badge variant="neutral" className="text-[9px] capitalize opacity-60">
-                            {item.type === "student" && t("topbar.result.student")}
-                            {item.type === "group" && t("topbar.result.group")}
-                            {item.type === "navigation" && t("topbar.result.navigation")}
-                          </Badge>
-                          {isSelected && (
-                            <ArrowRight className="h-3.5 w-3.5 text-brand-400 animate-pulse" />
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Right Section */}
