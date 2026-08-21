@@ -273,6 +273,8 @@ service cloud.firestore {
                     && (
                          (hasLegacyIn(request.resource.data.get('centerId', ''))
                           && request.resource.data.get('role', '') == get(legacyPath()).data.role)
+                         || (request.auth.token.email != null
+                             && request.resource.data.get('email', '') == request.auth.token.email)
                          || (
                               exists(/databases/$(database)/documents/centers/$(request.resource.data.centerId))
                               && get(/databases/$(database)/documents/centers/$(request.resource.data.centerId))

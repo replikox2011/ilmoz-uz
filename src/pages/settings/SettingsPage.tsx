@@ -17,11 +17,28 @@ import { LoginPageCustomizer } from "../../components/settings/LoginPageCustomiz
 import { useI18n } from "../../i18n/I18nContext";
 const CAN_EDIT_CENTER: string[] = ["owner", "director"];
 export function SettingsPage() {
-  const { user, center, logout, setCenter } = useAuth();
+  const { user, center, logout, setCenter, linkGoogleAccount } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [savingCenter, setSavingCenter] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [linkingGoogle, setLinkingGoogle] = React.useState(false);
+  const [googleSuccess, setGoogleSuccess] = React.useState(false);
+
+  const handleLinkGoogle = async () => {
+    setLinkingGoogle(true);
+    try {
+      await linkGoogleAccount();
+      setGoogleSuccess(true);
+      setTimeout(() => setGoogleSuccess(false), 3000);
+    } catch (err: any) {
+      if (err?.code !== "auth/popup-closed-by-user") {
+        alert("Google аккаунтини улашда хизмат кўрсатишда хАТОЛИК юз берди: " + (err?.message || err));
+      }
+    } finally {
+      setLinkingGoogle(false);
+    }
+  };
 
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [confirmText, setConfirmText] = React.useState("");
@@ -107,6 +124,50 @@ export function SettingsPage() {
             </div>
           </div>
         </div>
+      </GlassCard>
+
+      {/* Google Sign-in card for all roles (Teachers, Students, Parents, Staff, Owners) */}
+      <GlassCard className="p-6">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-white/40">
+          Google аккаунти билан кириш (Google Sign-In)
+        </h2>
+        <p className="mb-4 text-xs text-white/50">
+          Ўқитувчилар, ўқувчилар, ота-оналар ва администраторлар Google орқали 1-кликда тизимга киришлари мумкин.
+        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
+              <svg className="h-5 w-5" viewBox="0 0 24 24">
+                <path
+                  fill="#EA4335"
+                  d="M12 10.2v3.9h5.5c-.24 1.4-1.66 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.5 12 2.5 6.9 2.5 2.8 6.6 2.8 12S6.9 21.5 12 21.5c5.9 0 9.8-4.1 9.8-9.9 0-.7-.1-1.2-.2-1.7H12z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">
+                {user.email ? `Google уланган (${user.email})` : "Google аккаунт ҳали уланмаган"}
+              </p>
+              <p className="text-xs text-white/40">
+                {user.email
+                  ? "Сиз Google орқали паролсиз бир кликда киришингиз мумкин."
+                  : "Биринчи киришда Google аккаунтини уланг."}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="glass"
+            type="button"
+            loading={linkingGoogle}
+            onClick={handleLinkGoogle}
+            className="shrink-0 text-xs"
+          >
+            {user.email ? "Қайта улаш" : "Google-ни улаш"}
+          </Button>
+        </div>
+        {googleSuccess && (
+          <p className="mt-2 text-xs text-emerald-400 font-medium">✓ Google аккаунти муваффақиятли уланди!</p>
+        )}
       </GlassCard>
 
       {/* Center settings */}

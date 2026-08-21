@@ -59,6 +59,7 @@ interface AuthContextValue {
   isHeadquarters: boolean;
 
   signInWithGoogle: () => Promise<void>;
+  linkGoogleAccount: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   /** Login with email OR username OR phone + password */
   signInWithLogin: (login: string, password: string) => Promise<void>;
@@ -169,25 +170,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Dynamic owner mapping / recovery:
-      // If we are on a subdomain but have no profile document yet, check if this user is the owner
-      // of this center according to ownerEmail. If so, automatically create their owner profile document!
-      if ((!snap || !snap.exists()) && resolvedSubdomainCenterId && fb.email) {
-        const subCenter = await firestoreRepository.getCenter(resolvedSubdomainCenterId);
-        if (subCenter && subCenter.ownerEmail && subCenter.ownerEmail.toLowerCase() === fb.email.toLowerCase()) {
-          const avatarColor = pickColor(fb.uid);
-          const newUser: User = {
-            id: fb.uid,
-            centerId: resolvedSubdomainCenterId,
-            name: fb.displayName || fb.email.split("@")[0] || "Markaz egasi",
-            email: fb.email.toLowerCase(),
-            username: fb.email.split("@")[0].toLowerCase(),
-            role: "owner" as Role,
-            avatarColor,
-            createdAt: new Date().toISOString(),
-          };
-          await setDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`), strip(newUser as any));
-          snap = await getDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`));
+      // Dynamic mapping / recovery for ALL roles (owners, teachers, students, parents, staff):
+      // If profile doc not found by UID key, check if a profile with matching email exists in userProfiles.
+      if ((!snap || !snap.exists()) && fb.email) {
+        const userEmail = fb.email.toLowerCase();
+        
+        // 1. Check for pre-created user profile (teacher, student, parent, staff, etc.) by email
+        try {
+          const qSnap = await getDocs(query(collection(db, "userProfiles"), where("email", "==", userEmail), limit(5)));
+          if (!qSnap.empty) {
+            // Pick document matching active subdomain center if specified, or first matching profile
+            const matchedDoc = qSnap.docs.find(d => {
+              const data = d.data() as User;
+              return resolvedSubdomainCenterId ? data.centerId === resolvedSubdomainCenterId : true;
+            }) || qSnap.docs[0];
+
+            if (matchedDoc) {
+              const existingUser = matchedDoc.data() as User;
+              const targetCenterId = existingUser.centerId;
+              const newCompositeKey = `${targetCenterId}_${fb.uid}`;
+
+              const linkedUser: User = {
+                ...existingUser,
+                id: fb.uid,
+                email: userEmail,
+              };
+
+              await setDoc(doc(db, "userProfiles", newCompositeKey), strip(linkedUser as any));
+
+              // Clean up old doc key if it was different
+              if (matchedDoc.id !== newCompositeKey && matchedDoc.id !== fb.uid) {
+                try {
+                  await deleteDoc(doc(db, "userProfiles", matchedDoc.id));
+                } catch {}
+              }
+
+              snap = await getDoc(doc(db, "userProfiles", newCompositeKey));
+            }
+          }
+        } catch (e) {
+          console.warn("Auto-link lookup by email failed:", e);
+        }
+
+        // 2. Dynamic owner mapping fallback:
+        // If still no profile document on subdomain, check if user is the center owner by ownerEmail
+        if ((!snap || !snap.exists()) && resolvedSubdomainCenterId) {
+          const subCenter = await firestoreRepository.getCenter(resolvedSubdomainCenterId);
+          if (subCenter && subCenter.ownerEmail && subCenter.ownerEmail.toLowerCase() === userEmail) {
+            const avatarColor = pickColor(fb.uid);
+            const newUser: User = {
+              id: fb.uid,
+              centerId: resolvedSubdomainCenterId,
+              name: fb.displayName || userEmail.split("@")[0] || "Markaz egasi",
+              email: userEmail,
+              username: userEmail.split("@")[0].toLowerCase(),
+              role: "owner" as Role,
+              avatarColor,
+              createdAt: new Date().toISOString(),
+            };
+            await setDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`), strip(newUser as any));
+            snap = await getDoc(doc(db, "userProfiles", `${resolvedSubdomainCenterId}_${fb.uid}`));
+          }
         }
       }
 
@@ -492,6 +535,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = `${window.location.protocol}//${rootHost}${portSuffix}/login`;
   };
 
+  const linkGoogleAccount = async () => {
+    const provider = new GoogleAuthProvider();
+    const res = await signInWithPopup(auth, provider);
+    const gEmail = res.user.email?.toLowerCase();
+    if (gEmail && user && center) {
+      const userDocId = `${center.id}_${user.id}`;
+      await updateDoc(doc(db, "userProfiles", userDocId), { email: gEmail }).catch(() => {});
+      setUser(prev => (prev ? { ...prev, email: gEmail } : prev));
+    }
+  };
+
   const value: AuthContextValue = {
     user,
     center,
@@ -506,6 +560,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     network,
     isHeadquarters: center?.isHeadquarters ?? false,
     signInWithGoogle,
+    linkGoogleAccount,
     signInWithEmail,
     signInWithLogin,
     registerWithEmail,

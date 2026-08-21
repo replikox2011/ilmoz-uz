@@ -132,7 +132,7 @@ export function LoginPage() {
       </div>
 
       {/* ── Social buttons ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <Button
           variant="glass"
           type="button"
@@ -142,6 +142,9 @@ export function LoginPage() {
         >
           <GoogleGlyph /> {t("auth.login.google")}
         </Button>
+        <p className="text-center text-[11px] text-white/35">
+          Egalari, o'qituvchilar, o'quvchilar va ota-onalar uchun Google bilan 1-klikda kirish
+        </p>
       </div>
 
       {/* Hide "Create account" on subdomain — registration not available there */}
