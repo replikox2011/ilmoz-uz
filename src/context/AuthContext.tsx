@@ -9,7 +9,7 @@ import {
   updateProfile,
   signOut,
 } from "firebase/auth";
-import { doc, getDoc, updateDoc, setDoc, getDocs, query, collection, where, limit } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, deleteDoc, getDocs, query, collection, where, limit } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { Center, CenterNetwork, Role, User } from "../types";
 import { firestoreRepository } from "../data/firestoreRepository";
