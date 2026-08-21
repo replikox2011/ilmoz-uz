@@ -1,14 +1,5 @@
-// Subdomain utilities for multi-tenant routing
-
-/**
- * The production root domain (no subdomain). Set via REACT_APP_ROOT_DOMAIN in
- * the environment (e.g. "ilmoz.uz"); falls back to "ilmoz.app" if unset.
- * This is the single source of truth for the tenant root host across the app.
- */
 export const ROOT_DOMAIN = process.env.REACT_APP_ROOT_DOMAIN || "ilmoz.uz";
-
 const ROOT_HOSTNAMES = ["localhost", ROOT_DOMAIN, `www.${ROOT_DOMAIN}`];
-
 export const RESERVED_SUBDOMAINS = new Set([
   "support",
   "admin",

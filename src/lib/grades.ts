@@ -1,10 +1,4 @@
 import { Lesson } from "../types";
-
-/**
- * Score a single student earned in one lesson, expressed as a percentage of the
- * lesson's total possible points. Returns null when the lesson has no assignments
- * or the student has no recorded grades (so callers can show "—" instead of 0%).
- */
 export function lessonPercentForStudent(lesson: Lesson, studentId: string): number | null {
   const assignments = lesson.assignments ?? [];
   if (assignments.length === 0) return null;
@@ -25,17 +19,9 @@ export function lessonPercentForStudent(lesson: Lesson, studentId: string): numb
   if (!hasAny || possible === 0) return null;
   return Math.round((earned / possible) * 100);
 }
-
-/** Sum of maxScore across a lesson's assignments. */
 export function lessonMaxTotal(lesson: Lesson): number {
   return (lesson.assignments ?? []).reduce((sum, a) => sum + (a.maxScore || 0), 0);
 }
-
-/**
- * A student's average performance across the given lessons (only lessons where
- * they have a recorded percentage count). Returns null when there is nothing to
- * average yet.
- */
 export function averagePercent(lessons: Lesson[], studentId: string): number | null {
   const pcts = lessons
     .map((l) => lessonPercentForStudent(l, studentId))
@@ -43,12 +29,6 @@ export function averagePercent(lessons: Lesson[], studentId: string): number | n
   if (pcts.length === 0) return null;
   return Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
 }
-
-/**
- * Time-ordered performance series for a student — one point per graded lesson,
- * oldest first. Used to draw the progress sparkline. Lessons without a grade for
- * this student are skipped.
- */
 export function progressSeries(lessons: Lesson[], studentId: string): number[] {
   return [...lessons]
     .sort((a, b) => a.date.localeCompare(b.date))
