@@ -273,6 +273,53 @@ export const COPILOT_TOOLS = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "mark_attendance",
+      description: "Mark or update student attendance for a group lesson (present/пришел/келди, absent/не пришел/келмади, or late/опоздал/кечикди).",
+      parameters: {
+        type: "object",
+        properties: {
+          groupId: { type: "string", description: "Group ID from list_groups or group name" },
+          date: { type: "string", description: "Lesson date in YYYY-MM-DD format (defaults to today)" },
+          topic: { type: "string", description: "Optional lesson topic" },
+          homework: { type: "string", description: "Optional homework description" },
+          records: {
+            type: "array",
+            description: "List of attendance marks for students in this group",
+            items: {
+              type: "object",
+              properties: {
+                studentId: { type: "string", description: "Student ID or student name" },
+                status: {
+                  type: "string",
+                  enum: ["present", "absent", "late"],
+                  description: "Attendance status: 'present' (пришел), 'absent' (не пришел), or 'late' (опоздал)",
+                },
+              },
+              required: ["studentId", "status"],
+            },
+          },
+        },
+        required: ["groupId", "records"] as string[],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "list_lessons",
+      description: "List past or recorded lessons and attendance records for a group",
+      parameters: {
+        type: "object",
+        properties: {
+          groupId: { type: "string", description: "Group ID from list_groups" },
+        },
+        required: ["groupId"] as string[],
+      },
+    },
+  },
 ];
 
 export async function executeTool(
@@ -482,6 +529,84 @@ export async function executeTool(
       } catch (e: any) {
         return { error: e?.message ?? "Failed to generate test" };
       }
+    }
+
+    case "list_lessons": {
+      const groupId = String(args.groupId);
+      const group = snapshot.groups.find(g => g.id === groupId || g.name.toLowerCase().includes(groupId.toLowerCase()));
+      const targetGroupId = group ? group.id : groupId;
+      const lessons = await repo.listLessons(centerId, targetGroupId);
+      return lessons.map(l => ({
+        id: l.id,
+        date: l.date,
+        topic: l.topic ?? null,
+        homework: l.homework ?? null,
+        attendance: l.attendance,
+      }));
+    }
+
+    case "mark_attendance": {
+      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
+      const groupIdArg = String(args.groupId ?? "");
+      const group = snapshot.groups.find(g => g.id === groupIdArg || g.name.toLowerCase().includes(groupIdArg.toLowerCase()));
+      if (!group) return { error: `Group "${groupIdArg}" not found. Call list_groups first.` };
+
+      const targetGroupId = group.id;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const dateStr = args.date ? String(args.date) : todayStr;
+
+      const existingLessons = await repo.listLessons(centerId, targetGroupId);
+      let lesson = existingLessons.find(l => l.date === dateStr);
+
+      const attendanceMap: Record<string, boolean | "late"> = { ...(lesson?.attendance ?? {}) };
+      const records = Array.isArray(args.records) ? args.records : [];
+      const updatedDetails: Array<{ studentId: string; studentName: string; status: string }> = [];
+
+      for (const r of records) {
+        const rawId = String(r.studentId ?? r.studentName ?? "");
+        const student = snapshot.students.find(s =>
+          s.id === rawId || s.name.toLowerCase().includes(rawId.toLowerCase())
+        );
+        if (!student) continue;
+
+        let st: boolean | "late" = true;
+        if (r.status === "absent" || r.status === false || r.status === "false") st = false;
+        else if (r.status === "late") st = "late";
+        else st = true;
+
+        attendanceMap[student.id] = st;
+        updatedDetails.push({
+          studentId: student.id,
+          studentName: student.name,
+          status: st === true ? "Пришел (келди)" : st === "late" ? "Опоздал (кечикди)" : "Отсутствовал (келмади)",
+        });
+      }
+
+      if (lesson) {
+        lesson = await repo.updateLesson(centerId, lesson.id, {
+          attendance: attendanceMap,
+          ...(args.topic ? { topic: String(args.topic) } : {}),
+          ...(args.homework ? { homework: String(args.homework) } : {}),
+        });
+      } else {
+        lesson = await repo.createLesson({
+          centerId,
+          groupId: targetGroupId,
+          date: dateStr,
+          topic: args.topic ? String(args.topic) : "Dars",
+          homework: args.homework ? String(args.homework) : "",
+          attendance: attendanceMap,
+        });
+      }
+
+      return {
+        success: true,
+        lessonId: lesson.id,
+        groupName: group.name,
+        date: dateStr,
+        updatedStudentsCount: updatedDetails.length,
+        records: updatedDetails,
+      };
     }
 
     default:
