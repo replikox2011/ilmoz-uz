@@ -1,162 +1,19 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Bell, Command, LogOut, Users,
-  GraduationCap, Settings, Sparkles,
-  ArrowRight, LayoutDashboard, CalendarDays,
-  Wallet, BarChart3, Languages, Sun, Moon, GitBranch, type LucideIcon
+  Bell, LogOut, Settings, Languages, Sun, Moon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useCenterData } from "../../hooks/useCenterData";
 import { Avatar } from "../ui/Avatar";
-import { Badge } from "../ui/Badge";
 import { cn } from "../../lib/utils";
 import { useI18n } from "../../i18n/I18nContext";
 import { useTheme } from "../../context/ThemeContext";
-
-interface SearchResult {
-  id: string;
-  title: string;
-  subtitle?: string;
-  type: "student" | "group" | "navigation";
-  url: string;
-  icon?: LucideIcon;
-  avatarColor?: string;
-}
 
 export function Topbar() {
   const { user, center, logout } = useAuth();
   const { language, languages, setLanguage, t } = useI18n();
   const { theme, toggleTheme } = useTheme();
-  const data = useCenterData();
   const navigate = useNavigate();
-
-  const [query, setQuery] = React.useState("");
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
-
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  // Default navigation commands/options
-  const navOptions = React.useMemo<SearchResult[]>(() => [
-    { id: "nav-dash", title: t("nav.dashboard"), subtitle: t("topbar.nav.dashboard.subtitle"), type: "navigation", url: "/", icon: LayoutDashboard },
-    { id: "nav-groups", title: t("nav.groups"), subtitle: t("topbar.nav.groups.subtitle"), type: "navigation", url: "/groups", icon: Users },
-    { id: "nav-schedule", title: t("nav.schedule"), subtitle: t("topbar.nav.schedule.subtitle"), type: "navigation", url: "/schedule", icon: CalendarDays },
-    { id: "nav-students", title: t("nav.students"), subtitle: t("topbar.nav.students.subtitle"), type: "navigation", url: "/students", icon: GraduationCap },
-    { id: "nav-teachers", title: t("nav.teachers"), subtitle: t("topbar.nav.teachers.subtitle"), type: "navigation", url: "/teachers", icon: Users },
-    { id: "nav-finance", title: t("nav.finance"), subtitle: t("topbar.nav.finance.subtitle"), type: "navigation", url: "/finance", icon: Wallet },
-    { id: "nav-analytics", title: t("nav.analytics"), subtitle: t("topbar.nav.analytics.subtitle"), type: "navigation", url: "/analytics", icon: BarChart3 },
-    { id: "nav-network", title: t("nav.network"), subtitle: t("topbar.nav.network.subtitle"), type: "navigation", url: "/network", icon: GitBranch },
-    { id: "nav-copilot", title: t("nav.copilot"), subtitle: t("topbar.nav.copilot.subtitle"), type: "navigation", url: "/ai", icon: Sparkles },
-    { id: "nav-notifications", title: t("nav.notifications"), subtitle: t("topbar.nav.notifications.subtitle"), type: "navigation", url: "/notifications", icon: Bell },
-    { id: "nav-settings", title: t("nav.settings"), subtitle: t("topbar.nav.settings.subtitle"), type: "navigation", url: "/settings", icon: Settings },
-  ], [t]);
-
-  // Global Ctrl+Q / Cmd+Q handler
-  React.useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        inputRef.current?.focus();
-        setIsOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, []);
-
-  // Click outside to close dropdown
-  React.useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Filtered results based on query
-  const results = React.useMemo<SearchResult[]>(() => {
-    if (!query.trim()) {
-      return navOptions;
-    }
-
-    const q = query.toLowerCase();
-    const matches: SearchResult[] = [];
-
-    // 1. Search Students
-    data.students.forEach(s => {
-      if (s.name.toLowerCase().includes(q) || (s.phone && s.phone.includes(q))) {
-        matches.push({
-          id: s.id,
-          title: s.name,
-          subtitle: s.phone || t("topbar.student.noPhone"),
-          type: "student",
-          url: "/students",
-          avatarColor: s.avatarColor,
-        });
-      }
-    });
-
-    // 2. Search Groups
-    data.groups.forEach(g => {
-      if (g.name.toLowerCase().includes(q)) {
-        matches.push({
-          id: g.id,
-          title: g.name,
-          subtitle: `${g.status === "active" ? t("topbar.group.active") : t("topbar.group.completed")} • ${g.studentIds?.length || 0} ${t("topbar.group.studentsShort")}`,
-          type: "group",
-          url: "/groups",
-        });
-      }
-    });
-
-    // 3. Search Navigation
-    navOptions.forEach(nav => {
-      if (nav.title.toLowerCase().includes(q) || (nav.subtitle && nav.subtitle.toLowerCase().includes(q))) {
-        matches.push(nav);
-      }
-    });
-
-    return matches;
-  }, [query, data.students, data.groups, navOptions, t]);
-
-  // Reset selected index on query change
-  React.useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
-
-  // Handle select action
-  const handleSelect = (item: SearchResult) => {
-    navigate(item.url);
-    setIsOpen(false);
-    setQuery("");
-    inputRef.current?.blur();
-  };
-
-  // Keyboard navigation within the dropdown
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev + 1) % Math.max(1, results.length));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev - 1 + results.length) % Math.max(1, results.length));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (results[selectedIndex]) {
-        handleSelect(results[selectedIndex]);
-      }
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setIsOpen(false);
-      inputRef.current?.blur();
-    }
-  };
 
   if (!user) return null;
 
