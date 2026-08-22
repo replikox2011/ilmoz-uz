@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { UserPlus, Search, Phone, Mail, GraduationCap, Users, User as UserIcon, Key } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -202,12 +203,17 @@ export function TeachersPage() {
 }
 
 function TeacherCard({ teacher, groupCount, t }: { teacher: UserType; groupCount: number; t: (key: string) => string }) {
+  const navigate = useNavigate();
   return (
-    <GlassCard interactive className="p-4">
+    <GlassCard
+      interactive
+      onClick={() => navigate(`/teachers/${teacher.username || teacher.id}`)}
+      className="p-4 cursor-pointer group"
+    >
       <div className="flex items-start gap-3">
         <Avatar name={teacher.name} color={teacher.avatarColor} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white">{teacher.name}</p>
+          <p className="truncate text-sm font-semibold text-white group-hover:text-brand-300 transition-colors">{teacher.name}</p>
           <p className="text-xs text-white/35 truncate">@{teacher.username}</p>
 
           <div className="mt-2 space-y-1">

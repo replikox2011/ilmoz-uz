@@ -357,16 +357,13 @@ export function StudentGridCard({ student, groupCount, username, action }: { stu
   const { t } = useI18n();
   const navigate = useNavigate();
   const handleClick = () => {
-    if (username) navigate(`/students/${username}`);
+    navigate(`/students/${username || student.id}`);
   };
   return (
     <MagneticCard className="h-full">
       <div 
         onClick={handleClick}
-        className={cn(
-          "bento-card group relative h-full flex flex-col rounded-3xl p-5 transition-all duration-300",
-          username && "cursor-pointer"
-        )}
+        className="bento-card group relative h-full flex flex-col rounded-3xl p-5 transition-all duration-300 cursor-pointer"
       >
         <div className="noise-overlay" />
         <div className="relative z-10 flex flex-col flex-1">
@@ -401,15 +398,12 @@ export function StudentRow({ student, groupCount, username, action }: { student:
   const { t } = useI18n();
   const navigate = useNavigate();
   const handleClick = () => {
-    if (username) navigate(`/students/${username}`);
+    navigate(`/students/${username || student.id}`);
   };
   return (
     <div
       onClick={handleClick}
-      className={cn(
-        "group relative flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-300 hover:border-white/12 hover:bg-white/[0.04]",
-        username && "cursor-pointer"
-      )}
+      className="group relative flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-300 hover:border-white/12 hover:bg-white/[0.04] cursor-pointer"
     >
       <Avatar name={student.name} color={student.avatarColor} size="md" />
       <div className="min-w-0 flex-1">
@@ -437,15 +431,12 @@ export function StudentTableRow({ student, groupCount, username, action }: { stu
   const { t } = useI18n();
   const navigate = useNavigate();
   const handleClick = () => {
-    if (username) navigate(`/students/${username}`);
+    navigate(`/students/${username || student.id}`);
   };
   return (
     <tr
       onClick={handleClick}
-      className={cn(
-        "group relative border-b border-white/[0.04] transition-colors hover:bg-white/[0.02]",
-        username && "cursor-pointer"
-      )}
+      className="group relative border-b border-white/[0.04] transition-colors hover:bg-white/[0.02] cursor-pointer"
     >
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">

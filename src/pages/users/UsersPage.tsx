@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Phone, Key, Calendar, Shield,
   LayoutGrid, List, UserPlus, Lock, Eye, EyeOff, Trash2,
@@ -96,6 +97,7 @@ const addSchema = z.object({
 type AddFormValues = z.infer<typeof addSchema>;
 
 export function UsersPage() {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const { center, user: currentUser } = useAuth();
   const data = useCenterData();
@@ -385,12 +387,17 @@ export function UsersPage() {
       {viewMode === "cards" && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(u => (
-            <GlassCard key={u.id} interactive className="p-4 relative group">
+            <GlassCard
+              key={u.id}
+              interactive
+              onClick={() => navigate(`/users/${u.username || u.id}`)}
+              className="p-4 relative group cursor-pointer"
+            >
               <div className="flex items-start gap-4">
                 <Avatar name={u.name} color={u.avatarColor} size="lg" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-white">{u.name}</p>
+                    <p className="truncate text-sm font-semibold text-white group-hover:text-brand-300 transition-colors">{u.name}</p>
                     {u.id !== currentUser?.id && (
                       <button
                         type="button"
@@ -460,11 +467,15 @@ export function UsersPage() {
               </thead>
               <tbody className="divide-y divide-white/[0.05]">
                 {filtered.map(u => (
-                  <tr key={u.id} className="transition hover:bg-white/[0.02]">
+                  <tr
+                    key={u.id}
+                    onClick={() => navigate(`/users/${u.username || u.id}`)}
+                    className="transition hover:bg-white/[0.04] cursor-pointer group"
+                  >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <Avatar name={u.name} color={u.avatarColor} size="sm" />
-                        <span className="font-medium text-white">{u.name}</span>
+                        <span className="font-medium text-white group-hover:text-brand-300 transition-colors">{u.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
@@ -482,7 +493,10 @@ export function UsersPage() {
                       {u.id !== currentUser?.id && (
                         <button
                           type="button"
-                          onClick={() => setDeletingUser(u)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingUser(u);
+                          }}
                           title="Удалить пользователя"
                           className="rounded-xl p-1.5 text-white/30 hover:bg-red-500/20 hover:text-red-400 transition"
                         >

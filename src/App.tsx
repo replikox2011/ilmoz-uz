@@ -11,7 +11,6 @@ import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { GroupsPage } from "./pages/groups/GroupsPage";
 import { GroupDetailPage } from "./pages/groups/GroupDetailPage";
 import { StudentsPage } from "./pages/students/StudentsPage";
-import { StudentProfilePage } from "./pages/students/StudentProfilePage";
 import { TeachersPage } from "./pages/teachers/TeachersPage";
 import { SchedulePage } from "./pages/schedule/SchedulePage";
 import { TestsPage } from "./pages/tests/TestsPage";
@@ -21,6 +20,7 @@ import { CopilotPage } from "./pages/ai/CopilotPage";
 import { ChildrenPage } from "./pages/children/ChildrenPage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
 import { UsersPage } from "./pages/users/UsersPage";
+import { UserProfilePage } from "./pages/users/UserProfilePage";
 import { CoursesPage } from "./pages/courses/CoursesPage";
 import { CourseDetailPage } from "./pages/courses/CourseDetailPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
@@ -300,14 +300,16 @@ function AppRoutes() {
       <Route path="/" element={<RootShell />}>
         {adminRoutes}
         <Route index element={<HomeRoute />} />
-        <Route path="users"         element={<UsersRoute />} />
-        <Route path="groups"        element={<GroupsPage />} />
-        <Route path="groups/:id"    element={<GroupDetailPage />} />
-        <Route path="schedule"      element={<SchedulePage />} />
-        <Route path="tests"         element={<TestsPage />} />
-        <Route path="students"      element={<StudentsPage />} />
-        <Route path="students/:username" element={<StudentProfilePage />} />
-        <Route path="teachers"      element={<TeachersPage />} />
+        <Route path="users"             element={<UsersRoute />} />
+        <Route path="users/:username"    element={<UserProfilePage />} />
+        <Route path="groups"            element={<GroupsPage />} />
+        <Route path="groups/:id"        element={<GroupDetailPage />} />
+        <Route path="schedule"          element={<SchedulePage />} />
+        <Route path="tests"             element={<TestsPage />} />
+        <Route path="students"          element={<StudentsPage />} />
+        <Route path="students/:username" element={<UserProfilePage />} />
+        <Route path="teachers"          element={<TeachersPage />} />
+        <Route path="teachers/:username" element={<UserProfilePage />} />
         <Route path="courses"         element={<CoursesPage />} />
         <Route path="courses/:id"    element={<CourseDetailPage />} />
         <Route path="finance"       element={<FinancePage />} />

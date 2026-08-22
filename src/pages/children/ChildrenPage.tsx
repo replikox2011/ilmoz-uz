@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { CalendarClock, Users, GraduationCap } from "lucide-react";
 import { useCenterData } from "../../hooks/useCenterData";
 import { useI18n } from "../../i18n/I18nContext";
@@ -62,6 +63,7 @@ export function ChildrenPage() {
 
 function ChildSection({ child, data }: { child: Student; data: ReturnType<typeof useCenterData> }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   const childGroups: Group[] = child.groupIds
     .map((id) => data.groups.find((g) => g.id === id))
@@ -75,10 +77,13 @@ function ChildSection({ child, data }: { child: Student; data: ReturnType<typeof
 
   return (
     <GlassCard className="p-6">
-      <div className="flex flex-wrap items-center gap-4">
+      <div
+        onClick={() => navigate(`/students/${child.id}`)}
+        className="flex flex-wrap items-center gap-4 cursor-pointer group/child hover:opacity-90 transition-opacity"
+      >
         <Avatar name={child.name} color={child.avatarColor} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-lg font-semibold text-white">{child.name}</p>
+          <p className="truncate text-lg font-semibold text-white group-hover/child:text-brand-300 transition-colors">{child.name}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {childGroups.length > 0 ? (
               childGroups.map((g) => (
