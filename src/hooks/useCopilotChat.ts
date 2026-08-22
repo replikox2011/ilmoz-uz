@@ -2,8 +2,6 @@ import * as React from "react";
 import { Center } from "../types";
 import { COPILOT_TOOLS, CenterSnapshot, executeTool } from "../components/copilot/copilotTools";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MAX_STORED = 100;
 const MAX_TOOL_ROUNDS = 6;
 
@@ -100,36 +98,6 @@ async function streamOnce(
     }),
     signal,
   });
-
-  // Local development fallback (npm start on localhost without vercel dev CLI)
-  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname.endsWith(".localhost");
-  if (!resp.ok && isLocalhost) {
-    const localKey = isGroq ? process.env.REACT_APP_GROQ_API_KEY : process.env.REACT_APP_OPENROUTER_API_KEY;
-    if (localKey) {
-      const url = isGroq ? GROQ_URL : OPENROUTER_URL;
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${localKey}`,
-        "Content-Type": "application/json",
-      };
-      if (!isGroq) {
-        headers["HTTP-Referer"] = "https://nexo-eos.app";
-        headers["X-Title"] = "NexoGPT";
-      }
-      resp = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: cfg.apiModel,
-          messages: apiMessages,
-          tools: COPILOT_TOOLS,
-          tool_choice: "auto",
-          stream: true,
-          max_tokens: 1024,
-        }),
-        signal,
-      });
-    }
-  }
 
   if (!resp.ok) {
     const provider = isGroq ? "Groq" : "OpenRouter";
