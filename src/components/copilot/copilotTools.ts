@@ -33,8 +33,8 @@ async function createAccount(input: {
   if (!/^[a-z0-9_]+$/.test(username)) {
     return { error: `Username "${username}" is invalid. Use lowercase letters, digits and _ only.` };
   }
-  if (input.password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
+  if (input.password.length < 6) {
+    return { error: "Password must be at least 6 characters." };
   }
   if (await repo.getUserByLogin(username)) {
     return { error: `Username "${username}" is already taken. Choose a different one.` };
@@ -80,6 +80,7 @@ export interface CenterSnapshot {
   courses: { id: string; name: string; color: string }[];
   /** UID of the signed-in user — used to attribute created records (e.g. tests). */
   currentUserId?: string;
+  currentUserRole?: Role;
 }
 
 export const COPILOT_TOOLS = [
@@ -330,13 +331,24 @@ export async function executeTool(
 ): Promise<any> {
   const currentUserId = snapshot.currentUserId;
   const isStaff = () => {
-    // But we don't have the user role directly in the snapshot if they are owner/director. 
-    // Wait, teachers array includes all staff users in useCenterData.ts. Let's check it.
+    if (snapshot.currentUserRole && ["owner", "director", "administrator"].includes(snapshot.currentUserRole)) {
+      return true;
+    }
+    const currentUser = snapshot.teachers.find(t => t.id === currentUserId);
+    return currentUser && ["owner", "director", "administrator"].includes(currentUser.role);
+  };
+  const isTeacher = () => {
+    if (snapshot.currentUserRole && ["owner", "director", "administrator", "teacher"].includes(snapshot.currentUserRole)) {
+      return true;
+    }
     const currentUser = snapshot.teachers.find(t => t.id === currentUserId);
     return currentUser && ["owner", "director", "administrator", "teacher"].includes(currentUser.role);
   };
   const requireStaff = () => {
-    if (!isStaff()) throw new Error("Permission denied: You must be a staff member to perform this action.");
+    if (!isStaff()) throw new Error("Permission denied: You must be a staff member (owner, director, administrator) to perform this action.");
+  };
+  const requireTeacher = () => {
+    if (!isTeacher()) throw new Error("Permission denied: You must be a teacher or staff member to perform this action.");
   };
 
   switch (name) {
@@ -495,6 +507,7 @@ export async function executeTool(
       });
 
     case "generate_test": {
+      try { requireTeacher(); } catch (e: any) { return { error: e.message }; }
       const questionCount = Math.min(20, Math.max(1, Number(args.questionCount) || 5));
       const mcqCount = args.mcqCount === undefined
         ? questionCount
@@ -546,7 +559,7 @@ export async function executeTool(
     }
 
     case "mark_attendance": {
-      try { requireStaff(); } catch (e: any) { return { error: e.message }; }
+      try { requireTeacher(); } catch (e: any) { return { error: e.message }; }
       const groupIdArg = String(args.groupId ?? "");
       const group = snapshot.groups.find(g => g.id === groupIdArg || g.name.toLowerCase().includes(groupIdArg.toLowerCase()));
       if (!group) return { error: `Group "${groupIdArg}" not found. Call list_groups first.` };

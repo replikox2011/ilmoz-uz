@@ -35,7 +35,8 @@ export function FloatingCopilot() {
     rooms: data.rooms,
     courses: data.courses,
     currentUserId: user?.id,
-  }), [data.groups, data.students, data.teachers, data.users, data.rooms, data.courses, user?.id]);
+    currentUserRole: user?.role,
+  }), [data.groups, data.students, data.teachers, data.users, data.rooms, data.courses, user?.id, user?.role]);
 
   const systemPrompt = React.useMemo(() => {
     const activeGroups = data.groups.filter(g => g.status === "active").length;
