@@ -241,6 +241,14 @@ export class FirestoreRepository implements Repository {
     const s = await getDocs(query(collection(db, "userProfiles"), where("centerId", "==", centerId)));
     return s.docs.map((d: any) => fromSnap<User>(d));
   }
+  async getUser(userId: string, centerId?: string): Promise<User | null> {
+    const docId = centerId ? `${centerId}_${userId}` : userId;
+    let s = await getDoc(doc(db, "userProfiles", docId));
+    if (!s.exists()) {
+      s = await getDoc(doc(db, "userProfiles", userId));
+    }
+    return s.exists() ? fromSnap<User>(s) : null;
+  }
   async getUserByLogin(login: string) {
     const key = login.trim().toLowerCase();
 
@@ -301,6 +309,15 @@ export class FirestoreRepository implements Repository {
     }
 
     return user;
+  }
+  async updateUser(centerId: string, userId: string, patch: Partial<User>): Promise<void> {
+    const docId = centerId ? `${centerId}_${userId}` : userId;
+    let ref = doc(db, "userProfiles", docId);
+    let snap = await getDoc(ref);
+    if (!snap.exists()) {
+      ref = doc(db, "userProfiles", userId);
+    }
+    await updateDoc(ref, strip(patch as any));
   }
   async deleteUser(userId: string, centerId?: string): Promise<void> {
     let docId = userId;
@@ -416,6 +433,10 @@ export class FirestoreRepository implements Repository {
   async listStudents(centerId: string) {
     const s = await getDocs(collection(db, "centers", centerId, "students"));
     return s.docs.map((d: any) => fromSnap<Student>(d));
+  }
+  async getStudent(centerId: string, studentId: string): Promise<Student | null> {
+    const s = await getDoc(doc(db, "centers", centerId, "students", studentId));
+    return s.exists() ? fromSnap<Student>(s) : null;
   }
   async createStudent(input: Omit<Student, "id"> & { id?: string }) {
     const { id: customId, ...rest } = input as any;

@@ -23,6 +23,7 @@ import {
   percentColor, percentStroke,
   assignmentPercent, assignmentColor,
 } from "../../lib/grades";
+import { sendParentAttendanceNotification } from "../../lib/telegramService";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -680,6 +681,15 @@ function AttendanceTable({
     // 2. Persist to Firebase in background
     try {
       await repo.updateLesson(centerId, lesson.id, updated);
+      const studentObj = students.find(s => s.id === studentId);
+      sendParentAttendanceNotification({
+        centerId,
+        studentId,
+        studentName: studentObj?.name || "Ученик",
+        status: next,
+        topic: lesson.topic || "Урок",
+        date: lesson.date,
+      }).catch(() => {});
     } catch (err) {
       console.error("Failed to update attendance", err);
       // Revert if error

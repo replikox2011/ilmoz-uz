@@ -3,6 +3,7 @@ import { secondaryAuth } from "../../lib/firebase";
 import { firestoreRepository as repo } from "../../data/firestoreRepository";
 import { Group, Student, User, Room, Test, TestQuestion, Role } from "../../types";
 import { generateTestWithWebSearch } from "./generateTest";
+import { sendParentAttendanceNotification } from "../../lib/telegramService";
 
 const AVATAR_COLORS = ["#3b6bff","#7c3aed","#059669","#d97706","#dc2626","#0891b2","#be185d","#65a30d"];
 const pickColor = (s: string) => AVATAR_COLORS[s.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length];
@@ -593,6 +594,16 @@ export async function executeTool(
           studentName: student.name,
           status: st === true ? "Пришел (келди)" : st === "late" ? "Опоздал (кечикди)" : "Отсутствовал (келмади)",
         });
+
+        // Trigger Telegram notification for parent asynchronously
+        sendParentAttendanceNotification({
+          centerId,
+          studentId: student.id,
+          studentName: student.name,
+          status: st,
+          topic: args.topic ? String(args.topic) : "Урок",
+          date: dateStr,
+        }).catch(() => {});
       }
 
       if (lesson) {

@@ -35,9 +35,11 @@ export interface Repository {
 
   // Users
   listUsers(centerId: string): Promise<User[]>;
+  getUser(userId: string, centerId?: string): Promise<User | null>;
   getUserByLogin(login: string): Promise<User | null>;
   isPhoneUnique(phone: string, exceptUid?: string): Promise<boolean>;
   createUser(input: Omit<User, "id"> & { id?: string }): Promise<User>;
+  updateUser(centerId: string, userId: string, patch: Partial<User>): Promise<void>;
   deleteUser(userId: string, centerId?: string): Promise<void>;
   /** True if at least one user exists on the whole platform (used for first-launch bootstrap). */
   hasAnyUser(): Promise<boolean>;
@@ -64,6 +66,7 @@ export interface Repository {
 
   // Students
   listStudents(centerId: string): Promise<Student[]>;
+  getStudent(centerId: string, studentId: string): Promise<Student | null>;
   createStudent(input: Omit<Student, "id"> & { id?: string }): Promise<Student>;
   updateStudent(centerId: string, studentId: string, patch: Partial<Omit<Student, "id" | "centerId">>): Promise<void>;
   deleteStudent(centerId: string, studentId: string): Promise<void>;

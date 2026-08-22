@@ -2,7 +2,7 @@ import * as React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Phone, Mail, Calendar, Users,
-  UserCircle2, Clock, DollarSign, Trash2, Shield, Key, MapPin, CheckCircle2
+  UserCircle2, Clock, DollarSign, Trash2, Shield, Key, MapPin, CheckCircle2, Send, Save
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCenterData } from "../../hooks/useCenterData";
@@ -46,6 +46,33 @@ export function UserProfilePage() {
     ) ?? null,
     [data.users, username]
   );
+
+  const [tgChatId, setTgChatId] = React.useState("");
+  const [savingTg, setSavingTg] = React.useState(false);
+  const [tgSaved, setTgSaved] = React.useState(false);
+
+  React.useEffect(() => {
+    if (targetUser) {
+      setTgChatId((targetUser as any).telegramChatId || "");
+    }
+  }, [targetUser]);
+
+  const handleSaveTelegram = async () => {
+    if (!targetUser || !center) return;
+    setSavingTg(true);
+    try {
+      await repo.updateUser(center.id, targetUser.id, { telegramChatId: tgChatId.trim() });
+      if (targetUser.role === "student") {
+        await repo.updateStudent(center.id, targetUser.id, { telegramChatId: tgChatId.trim() });
+      }
+      setTgSaved(true);
+      setTimeout(() => setTgSaved(false), 3000);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingTg(false);
+    }
+  };
 
   // Resolve student record if user is a student
   const studentRecord = React.useMemo(
@@ -285,6 +312,46 @@ export function UserProfilePage() {
           </div>
 
           <div className="space-y-5">
+            {/* Telegram Notification Settings */}
+            {(canManage || currentUser?.id === targetUser.id) && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-white/40">Telegram Уведомления</h2>
+                <GlassCard className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-xs font-medium text-white/70">
+                      <Send className="h-4 w-4 text-sky-400" /> Telegram Chat ID
+                    </span>
+                    {tgSaved && (
+                      <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Сохранено
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/45">
+                    Укажите Telegram Chat ID для получения ботом уведомлений об оценках и посещаемости.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="123456789"
+                      value={tgChatId}
+                      onChange={(e) => setTgChatId(e.target.value)}
+                      className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-white/20 focus:border-brand-500 focus:outline-none"
+                    />
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={handleSaveTelegram}
+                      disabled={savingTg}
+                    >
+                      <Save className="h-3.5 w-3.5 mr-1" />
+                      {savingTg ? "..." : "Сохранить"}
+                    </Button>
+                  </div>
+                </GlassCard>
+              </div>
+            )}
+
             {/* Parent Info */}
             {studentParent && (
               <div className="space-y-3">

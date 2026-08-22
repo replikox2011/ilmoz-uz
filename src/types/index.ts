@@ -94,6 +94,8 @@ export interface User {
   createdAt?: string;      // ISO string
   birthDate?: string;      // "YYYY-MM-DD"
   parentId?: string;       // for student role — UID of parent userProfile
+  telegramChatId?: string; // Telegram Chat ID for parent/student notifications
+  telegramUsername?: string;
 }
 
 export interface Room {
@@ -179,6 +181,8 @@ export interface Student {
   avatarColor: string;
   createdAt?: string;  // ISO string
   birthDate?: string;  // "YYYY-MM-DD"
+  telegramChatId?: string;
+  telegramUsername?: string;
 }
 
 export type TestQuestionType = "mcq" | "short";

@@ -116,6 +116,14 @@ export class MockRepository implements Repository {
     const user: User = { id: providedId ?? uid("u"), ...rest };
     db.users.push(user); save(db); return delay(user);
   }
+  async getUser(userId: string, centerId?: string) {
+    return delay(load().users.find(u => u.id === userId && (!centerId || u.centerId === centerId)) ?? null);
+  }
+  async updateUser(centerId: string, userId: string, patch: Partial<User>) {
+    const db = load();
+    db.users = db.users.map(u => u.id === userId ? { ...u, ...patch } : u);
+    save(db); return delay(undefined as void);
+  }
   async deleteUser(userId: string, centerId?: string) {
     const db = load();
     db.users = db.users.filter(u => u.id !== userId);
@@ -172,6 +180,9 @@ export class MockRepository implements Repository {
   }
 
   async listStudents(centerId: string) { return delay(load().students.filter(s => s.centerId === centerId)); }
+  async getStudent(centerId: string, studentId: string) {
+    return delay(load().students.find(s => s.id === studentId && s.centerId === centerId) ?? null);
+  }
   async createStudent(input: Omit<Student, "id">) {
     const db = load();
     const student: Student = { id: uid("student"), ...input };
