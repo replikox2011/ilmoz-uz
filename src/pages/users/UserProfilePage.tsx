@@ -319,34 +319,54 @@ export function UserProfilePage() {
                 <GlassCard className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-xs font-medium text-white/70">
-                      <Send className="h-4 w-4 text-sky-400" /> Telegram Chat ID
+                      <Send className="h-4 w-4 text-sky-400" /> Telegram Привязка
                     </span>
-                    {tgSaved && (
+                    {(targetUser as any).telegramChatId ? (
                       <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Сохранено
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Подтвержден
+                      </span>
+                    ) : (
+                      <span className="text-xs text-amber-400 font-medium">
+                        Не привязан
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-white/45">
-                    Укажите Telegram Chat ID для получения ботом уведомлений об оценках и посещаемости.
+                    Нажмите кнопку ниже для подтверждения привязки аккаунта в Telegram-боте:
                   </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="123456789"
-                      value={tgChatId}
-                      onChange={(e) => setTgChatId(e.target.value)}
-                      className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-white/20 focus:border-brand-500 focus:outline-none"
-                    />
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={handleSaveTelegram}
-                      disabled={savingTg}
+                  
+                  <div className="flex flex-col gap-2 pt-1">
+                    <a
+                      href={`https://t.me/ilmoz_uz_bot?start=confirm_${targetUser.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/30 px-4 py-2.5 text-xs font-medium text-sky-300 transition"
                     >
-                      <Save className="h-3.5 w-3.5 mr-1" />
-                      {savingTg ? "..." : "Сохранить"}
-                    </Button>
+                      <Send className="h-4 w-4" />
+                      Привязать через Telegram (в 1 клик)
+                    </a>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                      <input
+                        type="text"
+                        placeholder="Telegram Chat ID (123456789)"
+                        value={tgChatId}
+                        onChange={(e) => setTgChatId(e.target.value)}
+                        className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white placeholder-white/20 focus:border-brand-500 focus:outline-none"
+                      />
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={handleSaveTelegram}
+                        disabled={savingTg}
+                      >
+                        <Save className="h-3.5 w-3.5 mr-1" />
+                        {savingTg ? "..." : "Сохранить ID"}
+                      </Button>
+                    </div>
+                    {tgSaved && (
+                      <p className="text-xs text-emerald-400 text-right">Сохранено!</p>
+                    )}
                   </div>
                 </GlassCard>
               </div>
