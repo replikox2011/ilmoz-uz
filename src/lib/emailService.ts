@@ -1,8 +1,16 @@
 import emailjs from "@emailjs/browser";
 
-const SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || "";
-const TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || "";
-const PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || "";
+const SERVICE_ID = (process.env.REACT_APP_EMAILJS_SERVICE_ID && process.env.REACT_APP_EMAILJS_SERVICE_ID !== "YOUR_EMAILJS_SERVICE_ID")
+  ? process.env.REACT_APP_EMAILJS_SERVICE_ID
+  : "service_xtzd82m";
+
+const TEMPLATE_ID = (process.env.REACT_APP_EMAILJS_TEMPLATE_ID && process.env.REACT_APP_EMAILJS_TEMPLATE_ID !== "template_otp")
+  ? process.env.REACT_APP_EMAILJS_TEMPLATE_ID
+  : "template_zihznvd";
+
+const PUBLIC_KEY = (process.env.REACT_APP_EMAILJS_PUBLIC_KEY && process.env.REACT_APP_EMAILJS_PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY")
+  ? process.env.REACT_APP_EMAILJS_PUBLIC_KEY
+  : "Nxp7_kw7MTbscVVuW";
 
 export interface SendEmailOtpParams {
   toEmail: string;
@@ -14,9 +22,6 @@ export interface SendEmailOtpParams {
  * Sends a 6-digit OTP code to the target email via EmailJS.
  */
 export async function sendEmailOtp({ toEmail, toName, otpCode }: SendEmailOtpParams): Promise<boolean> {
-  // Always log for local development and debugging
-  console.log(`[EmailOTP] Generated 6-digit code for ${toEmail}: ${otpCode}`);
-  console.log(`[EmailJS] Using ServiceID: ${SERVICE_ID}, TemplateID: ${TEMPLATE_ID}`);
 
   if (!PUBLIC_KEY || PUBLIC_KEY === "YOUR_EMAILJS_PUBLIC_KEY") {
     console.warn("[EmailJS] Public Key is not set in environment variables. OTP code printed to console above.");
