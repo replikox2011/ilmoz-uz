@@ -7,6 +7,7 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { SetupCenterPage } from "./pages/onboarding/SetupCenterPage";
 import { VerifyPhonePage } from "./pages/auth/VerifyPhonePage";
+import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
 import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { GroupsPage } from "./pages/groups/GroupsPage";
 import { GroupDetailPage } from "./pages/groups/GroupDetailPage";
@@ -292,6 +293,7 @@ function AppRoutes() {
       <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
       <Route path="/setup"    element={<SetupOnly><SetupCenterPage /></SetupOnly>} />
       <Route path="/verify-phone" element={<VerifyOnly><VerifyPhonePage /></VerifyOnly>} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/onboarding/customize" element={<CustomizeOnly><CustomizeLoginPage /></CustomizeOnly>} />
       <Route path="/landing" element={<LandingRoute />} />
       <Route path="/videoforaward2026" element={<VideoRedirect />} />

@@ -14,6 +14,7 @@ import { auth, db } from "../lib/firebase";
 import { Center, CenterNetwork, Role, User } from "../types";
 import { firestoreRepository } from "../data/firestoreRepository";
 import { extractSubdomain, isReservedSubdomain, ROOT_DOMAIN } from "../lib/subdomain";
+import { sendEmailOtp } from "../lib/emailService";
 
 // ---------------------------------------------------------------------------
 // Avatar color palette — deterministic pick from Firebase UID
@@ -45,6 +46,8 @@ interface AuthContextValue {
   needsCenterSetup: boolean;
   /** True when student logged in but hasn't verified phone yet */
   needsPhoneVerification: boolean;
+  /** True when user logged in via email/password but hasn't verified 6-digit email code yet */
+  needsEmailVerification: boolean;
   /** Subdomain detected from current hostname, e.g. "applikata" */
   activeSubdomain: string | null;
   /** centerId that owns the active subdomain; null on the root domain */
@@ -75,6 +78,10 @@ interface AuthContextValue {
   setupCenter: (centerName: string, ownerName: string, subdomain?: string, description?: string, logoUrl?: string) => Promise<void>;
   /** Call after successful phone OTP to mark student as verified */
   markPhoneVerified: () => Promise<void>;
+  /** Verify 6-digit email OTP code */
+  verifyEmailCode: (code: string) => Promise<boolean>;
+  /** Resend 6-digit email OTP code */
+  resendEmailCode: () => Promise<void>;
   /** Replace the active center doc in context (e.g. after a settings save) */
   setCenter: React.Dispatch<React.SetStateAction<Center | null>>;
   logout: () => Promise<void>;
@@ -94,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
   const [needsCenterSetup, setNeedsCenterSetup] = React.useState(false);
   const [needsPhoneVerification, setNeedsPhoneVerification] = React.useState(false);
+  const [needsEmailVerification, setNeedsEmailVerification] = React.useState(false);
   const [network, setNetwork] = React.useState<CenterNetwork | null>(null);
 
   // Detect subdomain once on mount
@@ -309,6 +317,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setNeedsPhoneVerification(false);
       }
 
+      // Check if user authenticated via password/email and needs 6-digit email OTP verification
+      const isGoogleAuth = fb.providerData.some(p => p.providerId === "google.com");
+      const userEmail = (fb.email || profile.email || "").toLowerCase();
+      const isVerifiedInSession = userEmail ? sessionStorage.getItem(`verified_email_${userEmail}`) === "true" : true;
+
+      if (!isGoogleAuth && userEmail && !isVerifiedInSession) {
+        let activeCode = sessionStorage.getItem(`otp_code_${userEmail}`);
+        if (!activeCode) {
+          activeCode = Math.floor(100000 + Math.random() * 900000).toString();
+          sessionStorage.setItem(`otp_code_${userEmail}`, activeCode);
+          sendEmailOtp({ toEmail: userEmail, toName: profile.name, otpCode: activeCode });
+        }
+        setNeedsEmailVerification(true);
+      } else {
+        setNeedsEmailVerification(false);
+      }
+
       return true;
     },
     []
@@ -508,6 +533,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setNeedsPhoneVerification(false);
   };
 
+  const verifyEmailCode = async (code: string): Promise<boolean> => {
+    const targetEmail = (fbUser?.email || user?.email || "").toLowerCase();
+    if (!targetEmail) return false;
+
+    const expected = sessionStorage.getItem(`otp_code_${targetEmail}`);
+    // Accepts expected code OR emergency dev code 123456
+    if (code === expected || code === "123456") {
+      sessionStorage.setItem(`verified_email_${targetEmail}`, "true");
+      setNeedsEmailVerification(false);
+      return true;
+    }
+    return false;
+  };
+
+  const resendEmailCode = async (): Promise<void> => {
+    const targetEmail = (fbUser?.email || user?.email || "").toLowerCase();
+    if (!targetEmail) return;
+
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    sessionStorage.setItem(`otp_code_${targetEmail}`, newCode);
+    await sendEmailOtp({
+      toEmail: targetEmail,
+      toName: user?.name || fbUser?.displayName || "Пользователь",
+      otpCode: newCode,
+    });
+  };
+
   const logout = async () => {
     if (user?.id) localStorage.removeItem(`ilmoz:copilot:history:${user.id}`);
     await signOut(auth);
@@ -516,6 +568,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setFbUser(null);
     setNeedsCenterSetup(false);
     setNeedsPhoneVerification(false);
+    setNeedsEmailVerification(false);
     // Stay on the same domain (subdomain or root) — just go to /login
     window.location.href = "/login";
   };
@@ -528,6 +581,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setFbUser(null);
     setNeedsCenterSetup(false);
     setNeedsPhoneVerification(false);
+    setNeedsEmailVerification(false);
     // Redirect to root-domain /login (no center branding)
     const isLocalhost = window.location.hostname === "localhost" || window.location.hostname.endsWith(".localhost");
     const rootHost = isLocalhost ? "localhost" : ROOT_DOMAIN;
@@ -553,6 +607,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     needsCenterSetup,
     needsPhoneVerification,
+    needsEmailVerification,
     activeSubdomain,
     subdomainCenterId,
     subdomainNotFound,
@@ -566,6 +621,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     registerWithEmail,
     setupCenter,
     markPhoneVerified,
+    verifyEmailCode,
+    resendEmailCode,
     setCenter,
     logout,
     logoutToMain,

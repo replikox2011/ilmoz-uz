@@ -4,6 +4,7 @@
   "private": true,
   "description": "Ilmoz EOS — Education Operating System",
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^3.9.0",
     "@types/dompurify": "^3.0.5",

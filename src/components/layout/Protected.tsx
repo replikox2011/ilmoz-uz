@@ -5,7 +5,7 @@ import { Logo } from "../ui/Logo";
 import { useI18n } from "../../i18n/I18nContext";
 
 export function Protected({ children }: { children: React.ReactNode }) {
-  const { fbUser, user, loading, needsCenterSetup, activeSubdomain } = useAuth();
+  const { fbUser, user, loading, needsCenterSetup, needsEmailVerification, activeSubdomain } = useAuth();
 
   if (loading) return <BootScreen />;
 
@@ -19,6 +19,9 @@ export function Protected({ children }: { children: React.ReactNode }) {
 
   // Signed in via Google/Phone but hasn't created a center yet → onboarding
   if (needsCenterSetup) return <Navigate to="/setup" replace />;
+
+  // Needs 6-digit email OTP verification
+  if (needsEmailVerification) return <Navigate to="/verify-email" replace />;
 
   // Firestore profile still resolving (rare flash)
   if (!user) return <BootScreen />;
